@@ -47,10 +47,11 @@ The atelier metaphor maps onto three tiers.
 | Executor | the **apprentices** | Haiku 4.5 (parallel subagents) | Take one brief, execute it, report results against the brief's acceptance criteria. Make only within-unit decisions. |
 | Checker | the **journeyman** | Sonnet 4.6 (subagent) | Verify each finished unit against its acceptance criteria; apply surgical fixes; route escalations. |
 
-**Routing mechanism:** the `Agent` tool's `model` parameter (`haiku` / `sonnet` /
-`opus`). The master is the main Opus session; it dispatches apprentice subagents
-with `model: haiku` and journeyman subagents with `model: sonnet`. No new
-infrastructure.
+**Routing mechanism:** the `Agent` tool's `model` parameter (confirmed: enum
+`haiku` / `sonnet` / `opus`; the Workflow `agent()` helper takes the same
+`model` option). The master is the main Opus session; it dispatches apprentice
+subagents with `model: haiku` and journeyman subagents with `model: sonnet`. No
+new infrastructure.
 
 ## Calibration principle
 
@@ -217,8 +218,9 @@ is noted as a future capability, not part of the initial implementation.
 
 ## Open questions for review
 
-- Should the orchestrator cap parallel apprentices (e.g. a max fan-out) to control
-  cost, or rely on the platform's subagent concurrency limits?
+- Cap on parallel apprentices. **Default:** rely on the platform's subagent
+  concurrency limits for v1 (no explicit cap); revisit only if cost during
+  dogfooding warrants an orchestrator-level max fan-out.
 - Should `CONTRACT.md` and briefs be emitted to disk before any dispatch (fully
   upfront, pipelines-style) or can the master stream briefs as units become
   ready? Default: fully upfront, for auditability and a clean dependency graph.
