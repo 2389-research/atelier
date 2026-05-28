@@ -1,0 +1,6 @@
+{"name": "Alice", "age": 30, "score": 95.5, "active": true, "tags": ["python", "data"]}
+{"name": "Bob", "age": 25, "score": 87.3, "active": false, "metadata": {"level": 1}}
+{"name": "Charlie", "score": 92.1, "active": true, "tags": ["rust"]}
+{"name": "Diana", "age": 35, "active": true, "metadata": {"level": 3, "premium": true}, "score": 88.9}
+{"name": "Eve", "age": 28, "score": 91.0, "tags": ["javascript", "web", "frontend"], "active": false}
+{"name": "Frank", "age": 32, "active": true, "metadata": {"level": 2}}

@@ -79,19 +79,34 @@ haven't looked at. Choose a `<task-slug>` and create the working directory.
 
 ### Step 2 — Plan
 Invoke **`atelier-plan`** (you run this yourself; it is your planning discipline).
-It produces `CONTRACT.md`, the unit decomposition with a dependency graph, and one
-`briefs/UNIT-NNN.md` per unit — each ending in **acceptance criteria**. Propose the
-inferred criteria to the user in one message and let them adjust, unless the user
-already specified them (sufficiency-check skip). Initialize `LEDGER.md` with every
-unit `pending`.
+It first picks a **decomposition mode** (see below), then produces `CONTRACT.md`,
+the unit decomposition with a dependency graph, and one `briefs/UNIT-NNN.md` per
+unit — each ending in **acceptance criteria**. Propose the inferred criteria to the
+user in one message and let them adjust, unless the user already specified them
+(sufficiency-check skip). Initialize `LEDGER.md` with every unit `pending`.
 
 **Calibration:** pin cross-unit decisions exhaustively; write within-unit steps
 only to the depth Haiku needs. Briefs are "enough detail," not "every byte."
 
+**Decomposition mode** — how the artifact is split governs dispatch in Step 3:
+- **partition** — units own separate regions/files; run in **parallel**; you merge
+  fragments at integration. (Default for separable outputs.)
+- **relay** — one shared artifact extended segment by segment; units run
+  **sequentially**, each receiving the artifact's current state.
+- **layered** — role-specialized passes over the whole artifact (draft → edit →
+  polish); units run **sequentially**.
+- *Single artifact, no cross-unit seams* → degenerate plan: no `CONTRACT.md`, one
+  brief, one execute, one check.
+
 ### Step 3 — Dispatch executors
-Walk the dependency graph. For every unit whose dependencies are all `done`,
-dispatch a Haiku executor. **Dispatch all currently-ready units in a single
-message** (multiple `Agent` calls) so independent units run in parallel.
+**Partition mode:** walk the dependency graph; for every unit whose dependencies are
+all `done`, dispatch a Haiku executor, and **dispatch all currently-ready units in a
+single message** (multiple `Agent` calls) so independent units run in parallel.
+
+**Relay / layered mode:** dispatch **one unit at a time, in order** — do not
+parallelize. Each executor reads the shared artifact's current state and
+extends it (relay) or applies its pass (layered). Check each unit before
+dispatching the next, so continuity errors are caught before they compound.
 
 ```
 Agent(
@@ -128,6 +143,10 @@ Apply the **fix-loop control rules** below to the checker's verdict. A unit is o
 ### Step 5 — Integrate
 When all units are `done`, do a final coherence pass yourself (Opus): do the units
 fit together as one whole? Resolve any seams the unit-level checks couldn't see.
+- **partition** — assemble the fragments into the final artifact (concatenate per
+  the contract's ownership order).
+- **relay / layered** — assembly is a no-op; the shared artifact *is* the output.
+  Your coherence pass just confirms the whole reads as one.
 Then report: what was built, the ledger summary, and an approximate note on
 strong-model tokens saved vs. doing the whole task in this session.
 

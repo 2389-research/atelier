@@ -1,5 +1,10 @@
 # <Task name> — Contract
 
+**Decomposition mode:** partition | relay | layered
+<partition = separate regions, parallel, architect merges • relay = one shared
+artifact extended segment by segment, sequential • layered = role-specialized
+passes over the whole artifact, sequential>
+
 > The cross-unit architectural surface. Pin only what crosses a unit boundary —
 > the seams, not the interiors. Test for every line: *would two independent
 > executors have to agree on this for their outputs to fit together?* If no, it

@@ -26,10 +26,19 @@ You will be told your **working dir** (`docs/atelier/<task-slug>/`) and your
    CONTRACT.md are binding. Use the exact shapes and names it pins — other units
    depend on them. Do not modify files owned by other units.
 
-3. **Execute the brief's Approach.** Produce the unit's output. Make ordinary
-   within-unit choices yourself; the brief intentionally leaves those to you. If
-   the brief is genuinely ambiguous or contradicts the contract, do not guess on a
-   *cross-unit* matter — note it in your report (the checker will route it).
+3. **Execute the brief's Approach — per the decomposition mode** (stated in the
+   contract / your brief):
+   - **partition** — write your own fragment/file. Don't touch other units' outputs.
+   - **relay** — you are continuing a *shared* artifact. Read its current state
+     (the brief names it), then **append or extend** it with your segment, matching
+     the established voice and picking up exactly where it left off. Preserve what's
+     already there; add the next segment.
+   - **layered** — you are applying one *pass* over the *whole* shared artifact
+     (e.g. continuity edit, polish). Revise in place for your pass's role only; do
+     not rewrite wholesale or change things outside your pass's remit.
+   Make ordinary within-unit choices yourself; the brief intentionally leaves those
+   to you. If the brief is genuinely ambiguous or contradicts the contract, do not
+   guess on a *cross-unit* matter — note it in your report (the checker will route it).
 
 4. **Self-check against the acceptance criteria.** Before reporting, go through the
    brief's acceptance criteria. Run any criterion marked **runnable** (the command

@@ -68,6 +68,21 @@ fix loop, then do a final coherence pass and report.
 Artifacts land in `docs/atelier/<task-slug>/` (`CONTRACT.md`, `briefs/`,
 `LEDGER.md`) so a run is auditable and resumable.
 
+### Decomposition modes
+
+Not every task is "one file per agent." The architect picks a mode by how cohesive
+the final artifact must be:
+
+- **partition** — units own separate regions/files, run in **parallel**, architect
+  merges. Best for separable outputs (code files, doc sections).
+- **relay** — one shared artifact extended segment by segment, **sequentially**,
+  each agent reading the artifact-so-far. Best for flowing prose (a story chapter).
+- **layered** — role-specialized passes over the whole artifact (draft → continuity
+  edit → polish), **sequentially**. Best for one seamless voice via multiple lenses.
+
+A single artifact with no cross-unit seams skips the contract entirely — one brief,
+one execute, one check (or just don't use atelier).
+
 ## Fix loop (bounded, terminates)
 
 The checker diagnoses (`pass` / `local` / `execution` / `brief`); the orchestrator

@@ -16,16 +16,43 @@ so no executor ever has to.
 
 Work in this order. Persist everything to `docs/atelier/<task-slug>/`.
 
-## 1. Decompose into units
+## 0. First: is this even an atelier job?
 
-Break the task into units of work. A good unit:
-- produces one coherent output (a file, a function group, a document section, a
-  batch result),
-- can be executed by reading only the contract + its own brief,
+atelier's machinery (contract + briefs + ledger) exists **only to keep multiple
+units consistent**. Before planning, check the shape of the work:
+
+- **One indivisible artifact, no tiering wanted** → don't use atelier. Just do it.
+- **One artifact, but you want the cost/quality tiering** → run a *degenerate plan*:
+  **skip `CONTRACT.md`** (there are no cross-unit seams to pin), write a single
+  `briefs/UNIT-001.md` with acceptance criteria, dispatch one Haiku executor, one
+  Sonnet checker. You still get "Haiku drafts, Sonnet verifies" without orchestration.
+- **Multiple units** → continue below.
+
+## 1. Choose a decomposition mode
+
+"One unit = one file" is only one way to split work. Pick the mode by asking **how
+cohesive the final artifact must be** — how seamlessly the pieces must read as one.
+
+| Mode | Units relate by | Dispatch | Use when |
+|------|-----------------|----------|----------|
+| **partition** | each owns a separate region/file; architect concatenates fragments | parallel | outputs are cleanly separable — code files, doc sections, dungeon rooms, independent transforms |
+| **relay** | each agent continues the *same* artifact, receiving its current state + a brief for the next segment | sequential | one flowing artifact where each part depends on the voice/flow of the previous — a prose chapter written beat by beat |
+| **layered** | role-specialized *passes* over the *whole* artifact (e.g. draft → continuity edit → polish) | sequential | you want one seamless voice but multiple specialized lenses applied in turn |
+
+Default to **partition** when pieces are separable. Reach for **relay** or
+**layered** when parallel fragment-writing would produce seams — drifting voice,
+broken continuity, a committee-written feel. You can also mix: partition a document
+into chapters, then relay *within* a chapter.
+
+A good unit, in any mode:
+- produces one coherent contribution (a region, the next segment, or one pass),
+- can be executed by reading only the contract + its own brief (+ in relay/layered,
+  the current artifact state),
 - is small enough for one Haiku pass.
 
-Identify the **dependencies** between units. Two units are independent if neither
-reads the other's output. Independent units will run in parallel.
+Identify the **dependencies**. In partition, independent units run in parallel. In
+relay and layered, the graph is fully linear (each unit depends on the previous and
+operates on the same artifact). Record the chosen mode in `CONTRACT.md`.
 
 Prefer fewer, well-bounded units over many tiny ones — each dispatch has overhead.
 
