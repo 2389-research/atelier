@@ -28,8 +28,13 @@ the real expected values."
 
 case "$METHOD" in
   atelier)
-    # the tuned protocol: atelier skill, split tier
+    # the tuned protocol: atelier skill, split tier (subagent substrate)
     INSTR="Use the atelier skill in split tier to build the task specified below. Decompose, write the contract + briefs, dispatch executors, verify. $DONE_BAR"
+    FLAGS=() ;;
+  dispatch)
+    # lean JSONL-dispatch substrate: atelier-dispatch skill, no subagents
+    DPY="$EVAL_DIR/../skills/atelier-dispatch/dispatch.py"
+    INSTR="Use the atelier-dispatch skill to build the task below in this directory. The dispatch engine is at $DPY — after you write contract.md and units.jsonl here, run: python3 $DPY . Decompose into units (tier haiku, kind generate, terse inline briefs + acceptance criteria). After dispatch, run the gate yourself and surgically fix any failures, then report. $DONE_BAR"
     FLAGS=() ;;
   subagents)
     # ad-hoc delegation, NO atelier: skills off, but Task tool allowed. Controls for
@@ -51,7 +56,13 @@ cd "$RUN_DIR"
 claude -p "$PROMPT" --output-format json --model "$MODEL" \
   --permission-mode bypassPermissions "${FLAGS[@]}" > result.json 2> err.log || true
 
-COST="$(python3 -c "import json;print('%.5f'%json.load(open('result.json')).get('total_cost_usd',0))" 2>/dev/null || echo "PARSE_ERR")"
+# orchestrator cost (result.json) + dispatch cost (manifest.json, if present — those
+# bare calls are separate sessions, NOT in the orchestrator's total).
+COST="$(python3 -c "
+import json,os
+oc=json.load(open('result.json')).get('total_cost_usd',0) or 0
+dc=json.load(open('manifest.json')).get('dispatch_cost_usd',0) if os.path.exists('manifest.json') else 0
+print('%.5f'%(oc+dc))" 2>/dev/null || echo "PARSE_ERR")"
 TURNS="$(python3 -c "import json;print(json.load(open('result.json')).get('num_turns',''))" 2>/dev/null || echo "")"
 # durable record (gate result filled in by the experimenter after verifying)
 RESULTS_CSV="$EVAL_DIR/runs/results.csv"

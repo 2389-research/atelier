@@ -13,6 +13,7 @@ did the task's gate pass.
 | 01-wordfreq | small | opus+subagents | $0.505 | 0.505 | — | — | 17/17 ✓ | n/a | **0 Task calls** — given permission, didn't delegate |
 | 01-wordfreq | small | direct-sonnet | _pending_ | — | | — | | n/a | |
 | 01-wordfreq | small | atelier-split | $1.856 | | | | 12/12 ✓ | 0 | full split-tier headless, 3/3 units; **3.7× direct** (small = worst case) |
+| 01-wordfreq | small | atelier-dispatch | $0.624 | 0.446 (orch) | — | 0.178 (disp) | 35/35 ✓ | 0 | JSONL-dispatch headless; **3× cheaper than subagent**, ~1.25× direct; orch fixed cost dominates at small size |
 | 02-taskstore | medium | direct-opus | | | — | — | | n/a | |
 | 02-taskstore | medium | direct-sonnet | | — | | — | | n/a | |
 | 02-taskstore | medium | atelier-split | | | | | | | |
