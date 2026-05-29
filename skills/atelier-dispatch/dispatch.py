@@ -42,7 +42,9 @@ def plan():
         "1) contract.md — cross-unit surface ONLY (shared interfaces/seam, conventions, ownership, dep graph). Lean.\n"
         "2) units.jsonl — one JSON per line: "
         '{"id":"UNIT-001","tier":"haiku","kind":"generate","deps":[],"brief":"terse brief + acceptance criteria"}. '
-        "One unit per file/component.\n\n"
+        "STRICT: exactly ONE output file per unit — never bundle two files into one unit "
+        "(the executor is a small model and does best on a single focused file). If a "
+        "feature needs a source file and a test file, that's TWO units.\n\n"
         + (f"AGENDA:\n{agenda}\n\n" if agenda else "") + f"TASK SPEC:\n{spec}\n")
     text, cost = call_model(prompt, "sonnet")
     files = write_files(text)
@@ -55,9 +57,10 @@ def execute():
     units = [json.loads(l) for l in open("units.jsonl") if l.strip()]
     pending = {u["id"]: u for u in units}; done, manifest, total = set(), [], 0.0
     def prompt_for(u):
-        return (f"You are an expert programmer building ONE unit. Honor the CONTRACT (it pins "
-            f"cross-unit interfaces). Output ONLY the file(s) for your unit, each wrapped EXACTLY as "
-            f'<FILE path="rel/path.ext">\n...\n</FILE> — no prose, no fences.\n\n'
+        return (f"You are an expert programmer writing ONE file. Honor the CONTRACT (it pins "
+            f"cross-unit interfaces). Output ONLY that one file, wrapped EXACTLY as "
+            f'<FILE path="rel/path.ext">\n...\n</FILE> — no prose, no explanation, no fences, '
+            f"nothing before or after the FILE block. Be terse.\n\n"
             f"CONTRACT:\n{contract}\n\nYOUR UNIT BRIEF:\n{u.get('brief','')}\n")
     while pending:
         ready = [u for u in pending.values() if all(d in done for d in u.get("deps", []))] or list(pending.values())
