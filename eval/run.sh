@@ -18,10 +18,18 @@ slug="$(basename "$TASK" .md)"
 RUN_DIR="$EVAL_DIR/runs/${slug}__${METHOD}__${MODEL}"
 rm -rf "$RUN_DIR"; mkdir -p "$RUN_DIR"
 
+# Both arms are held to the SAME done-bar (write real tests, iterate to green) so the
+# cost comparison is at equal quality. Final scoring uses an EXTERNAL held-out gate
+# the experimenter runs (see README) — not the arm's self-report.
+DONE_BAR="Definition of done (mandatory): write tests that genuinely exercise the
+behaviors in the spec (NOT trivial/always-true tests), run them, and iterate until
+they actually pass. Do not stop with failing tests or with tests that don't assert
+the real expected values."
+
 if [ "$METHOD" = "atelier" ]; then
-  INSTR="Use the atelier skill in split tier to build the task specified below. Decompose, write the contract + briefs, dispatch executors, verify. When done, run the task's gate."
+  INSTR="Use the atelier skill in split tier to build the task specified below. Decompose, write the contract + briefs, dispatch executors, verify. $DONE_BAR"
 else
-  INSTR="Build the task specified below directly — write the code and its tests, then run the task's gate and make it pass."
+  INSTR="Build the task specified below directly. $DONE_BAR"
 fi
 
 PROMPT="$INSTR

@@ -115,6 +115,27 @@ report task cost with vs without the fixed overhead.)
   log it as cost. Per-unit would require parsing subagent transcript JSONL under
   `~/.claude/projects/` — out of scope; per-task + per-tier are enough.
 
+### Scoring rule — equal quality, or it isn't a comparison
+Cost is only meaningful **at equal, independently-verified quality** — the cheapest
+way to "solve" any task is to solve it badly. So **do not trust either arm's
+self-report.** atelier verifies structurally (gate + checker); a direct pass verifies
+only as much as it bothers to and can ship vacuous tests (`assert(true)`) to look
+cheap. To neutralize that:
+
+1. **Author a held-out gate per task** (a reference test suite for code; a concrete
+   checklist for prose) that the *experimenter* runs against every arm's output.
+   Neither arm sees it, so neither can write tests to its own bar. (Both arms still
+   write their own tests as part of the deliverable — but scoring uses the held-out
+   gate, applied identically.)
+2. **A run counts only if it passes the held-out gate.** A cheaper run that fails it
+   is a **loss, not a saving.** Compare cost *only among runs that pass.*
+3. Spot-check that each arm's *own* tests are non-vacuous (exist, assert real values,
+   cover the spec's named behaviors) — the vacuous-test hole exists on **both** sides.
+
+Both arms also get the identical done-bar in their prompt (write real tests, iterate
+to green) — see `run.sh` — but the prompt is necessary, not sufficient; the held-out
+gate is what actually enforces equal quality.
+
 ### What we're testing
 - **Does atelier-split beat direct-opus on cost** at equal quality (tests pass)?
 - **Does the win grow with task size** (small → large)? Expectation: small is
