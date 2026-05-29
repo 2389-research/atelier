@@ -3,15 +3,28 @@
 Two coupled experiments. **#1 measures cost/quality; #2 (simmer) consumes #1's
 numbers to refine atelier.** Run #1 first — it's the foundation.
 
-The benchmark tasks (`tasks/`) are deliberately a **size ladder** — small (~3 units),
-medium (~5–6), large (~8+) — because the core hypothesis is *atelier's savings grow
-with task size*. Each task has runnable tests, so "did it work" is objective.
+The tasks split into two groups, deliberately:
+
+**A. Size ladder (stack held constant = JS ESM).** Isolates the core hypothesis —
+*atelier's savings grow with task size* — by varying ONLY size. Stack is held fixed
+because if you varied language and size together you couldn't tell which drove a
+trend. All have `node --test` gates so quality is objective.
 
 | Task | Size | Stack | Gate |
 |------|------|-------|------|
 | `01-wordfreq.md` | small (~3 units) | JS ESM | `node --test` |
 | `02-taskstore.md` | medium (~5–6 units) | JS ESM | `node --test` |
 | `03-jqlite.md` | large (~8 units) | JS ESM | `node --test` |
+
+**B. Generality probes (vary stack + type).** Guard against the ladder's blind spot —
+all-JS, all-pattern-heavy code is Haiku's *best* case and would flatter atelier. These
+check it isn't language-specific and that the **non-code path** (assertional checker,
+not a gate) actually works. Run once each; not part of the size curve.
+
+| Task | Type | Stack | Gate |
+|------|------|-------|------|
+| `04-pysummary.md` | code | Python | `pytest` (runnable) |
+| `05-comparison-brief.md` | non-code prose | — | assertional checklist (read) |
 
 ---
 

@@ -17,6 +17,14 @@ fresh session (includes subagents). "Tests" = did the task's `node --test` gate 
 | 03-jqlite | large | direct-sonnet | sonnet | | | | | n/a | |
 | 03-jqlite | large | atelier-split | opus+sonnet+haiku | | | | | | |
 
+### Generality probes (vary stack/type; run once each, not on the size curve)
+| Task | Type | Method | Model(s) | Total $ | Total tokens | Quality (gate) | Notes |
+|------|------|--------|----------|---------|--------------|----------------|-------|
+| 04-pysummary | Python code | direct-opus | opus | | | pytest | |
+| 04-pysummary | Python code | atelier-split | opus+sonnet+haiku | | | pytest | |
+| 05-comparison-brief | non-code | direct-opus | opus | | | checklist | |
+| 05-comparison-brief | non-code | atelier-split | opus+sonnet+haiku | | | checklist | |
+
 ### Read-out (fill after the table)
 - atelier-split vs direct-opus, $ by size: small ___% · medium ___% · large ___%
 - atelier-split vs direct-sonnet (the honest bar), $ by size: ___ / ___ / ___
