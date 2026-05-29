@@ -82,8 +82,22 @@ within-unit fix routes to cheap Sonnet and only contract defects reach Opus.
 Say **"atelier"**, **"delegate this"**, or **"tiered build"** on a multi-part task.
 The orchestrator will: frame the goal, plan (write `CONTRACT.md` + per-unit briefs
 with acceptance criteria, confirmed with you), dispatch Haiku executors in parallel
-where dependencies allow, run a Sonnet checker on each unit with a bounded tiered
-fix loop, then do a final coherence pass and report.
+where dependencies allow, **verify each unit by criterion type** (run the gate for
+runnable criteria; spend a Sonnet read only when a gate fails or there are
+assertional criteria to judge), apply a bounded tiered fix loop, then do a final
+coherence pass and report.
+
+### Verification is adaptive (don't pay Sonnet to read passing code)
+
+- **Runnable criteria** (tests, build, a CLI exit code) → the orchestrator just
+  **runs the gate**. Pass = done, no model spent. This is still independent
+  verification (the gate is re-run, not self-reported).
+- **A gate fails** → a Sonnet checker reads the failure and surgically fixes it.
+- **Assertional criteria** (prose, citations, canon, design quality) → a Sonnet
+  checker reads and judges *those* dimensions.
+
+So for code-with-tests the common path costs no checker tokens; Sonnet is spent only
+on failures and on things only a reader can judge.
 
 Artifacts land in `docs/atelier/<task-slug>/` (`CONTRACT.md`, `briefs/`,
 `LEDGER.md`) so a run is auditable and resumable.

@@ -55,7 +55,7 @@ anyway), or for trivial tasks where the planning overhead exceeds the work.
 | **architect / director** | Opus 4.8 | you, this session | plan, decide cross-unit, integrate, replan |
 | **brief-writer** *(split tier only)* | Sonnet 4.6 | dispatched subagent | expand one terse unit spec into a full brief |
 | **executor** | Haiku 4.5 | dispatched subagent | execute one brief |
-| **checker** | Sonnet 4.6 | dispatched subagent | verify + fix one unit |
+| **checker** | Sonnet 4.6 | dispatched subagent | judge + fix a unit — *only when a gate fails or there are assertional criteria* |
 
 **Dispatch mechanism:** the `Agent` tool's `model` parameter. Dispatch executors
 with `model: "haiku"`, brief-writers and checkers with `model: "sonnet"`. You are
@@ -147,8 +147,26 @@ Mark dispatched units `executing` in the ledger. As executors return, record the
 self-reported results. When a unit's dependencies become satisfied, dispatch it in
 the next batch.
 
-### Step 4 — Check each unit
-As each unit finishes executing, dispatch a Sonnet checker for it:
+### Step 4 — Verify (tiered by criterion type — don't pay Sonnet to read passing code)
+Verification matches the criterion. **A Sonnet read is expensive (~3× Haiku);
+spend it only where judgment is actually needed.**
+
+1. **Run the runnable criteria yourself first (the gate).** For each runnable
+   criterion (a test/command), run it directly with Bash. This *is* the independent
+   verification — you re-run rather than trust the executor's self-report, and it
+   costs no model tokens. (For heavy/parallel gates you may delegate to a Haiku
+   runner, but the orchestrator running a one-line command is cheapest.)
+
+2. **Decide whether Sonnet is even needed for this unit:**
+   - **All runnable criteria pass AND no assertional criteria** → mark the unit
+     `done`. **Do not dispatch a checker.** (Most code units land here — the
+     asteroids run would have skipped Sonnet on all 7.)
+   - **A runnable criterion fails** → dispatch a Sonnet checker to *diagnose and
+     surgically fix* (now a code read is justified — there's a real failure).
+   - **The unit has assertional criteria** (prose, "no claim uncited", design
+     quality — things only a reader can judge) → dispatch a Sonnet checker to read
+     and judge *those dimensions*. It need not re-read code that already passed its
+     gate; point it at what requires judgment.
 
 ```
 Agent(
@@ -156,8 +174,9 @@ Agent(
   model: "sonnet",
   description: "atelier check UNIT-NNN",
   prompt: "Use the atelier-check skill. Working dir: docs/atelier/<slug>/.
-           Your unit: UNIT-NNN. Verify the unit's output against the acceptance
-           criteria in briefs/UNIT-NNN.md and return the structured verdict."
+           Your unit: UNIT-NNN. Reason for check: <failing gate: ...> | <assertional
+           criteria to judge: ...>. Verify ONLY what's needed (don't re-read passing
+           code), apply the surgical fix if local, return the structured verdict."
 )
 ```
 

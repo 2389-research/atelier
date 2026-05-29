@@ -317,8 +317,14 @@ Criteria become the binding contract for that unit for the rest of the run.
      pass (layered). Check each before dispatching the next so continuity errors are
      caught before they compound.
    Each executor reports results against the criteria.
-4. **Check** (`atelier-check`) — as each unit finishes, a Sonnet checker
-   verifies it against its acceptance criteria and applies the tiered fix loop.
+4. **Verify (adaptive by criterion type)** — as each unit finishes, the
+   orchestrator **runs the runnable criteria itself** (the gate; no model tokens,
+   and still independent because it re-runs rather than trusting self-report). A
+   **Sonnet checker (`atelier-check`) is dispatched only when** a gate *fails*
+   (diagnose + surgically fix) **or** the unit has *assertional* criteria that need
+   judgment (read those dimensions). A unit whose runnable gate passes with no
+   assertional criteria is `done` with **no checker spend** — the common code path.
+   The tiered fix loop applies when a checker is invoked.
 5. **Integrate** — once all units pass, the architect does a final coherence pass
    (do the units fit together as a whole?). For partition this includes assembling
    the fragments; for relay/layered the artifact is already whole. Then reports
