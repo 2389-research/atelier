@@ -9,9 +9,10 @@ did the task's gate pass.
 
 | Task | Size | Method | Total $ | opus $ | sonnet $ | haiku $ | Tests pass | Escalations | Notes |
 |------|------|--------|---------|--------|----------|---------|------------|-------------|-------|
-| 01-wordfreq | small | direct-opus | | | — | — | | n/a | |
-| 01-wordfreq | small | direct-sonnet | | — | | — | | n/a | |
-| 01-wordfreq | small | atelier-split | | | | | | | |
+| 01-wordfreq | small | direct-opus | $0.499 | 0.499 | — | — | 18/18 ✓ | n/a | single-agent, no skills |
+| 01-wordfreq | small | opus+subagents | $0.505 | 0.505 | — | — | 17/17 ✓ | n/a | **0 Task calls** — given permission, didn't delegate |
+| 01-wordfreq | small | direct-sonnet | _pending_ | — | | — | | n/a | |
+| 01-wordfreq | small | atelier-split | $1.856 | | | | 12/12 ✓ | 0 | full split-tier headless, 3/3 units; **3.7× direct** (small = worst case) |
 | 02-taskstore | medium | direct-opus | | | — | — | | n/a | |
 | 02-taskstore | medium | direct-sonnet | | — | | — | | n/a | |
 | 02-taskstore | medium | atelier-split | | | | | | | |
