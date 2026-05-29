@@ -45,17 +45,37 @@ atelier generalizes three existing systems to arbitrary tasks:
   reliably passes.
 
 Where `local_code_gen` writes 600-line byte-pinned contracts for a tiny local
-model, atelier deliberately sits well above that floor — Haiku is capable, so the
-contract pins the **seams**, not the **interiors**.
+model (qwen3.6 / gemma), atelier deliberately sits well above that floor. **Haiku
+is far stronger**, so the contract pins only what is *cross-unit AND genuinely
+ambiguous* — the seams, not the interiors. Since Opus/Sonnet output is the
+expensive part, terseness is the goal: pin the few decisions two capable units
+would otherwise diverge on, and let Haiku infer the rest.
 
 ## Skills
 
 | Skill | Role | Model | Runs as |
 |-------|------|-------|---------|
 | `atelier` | orchestrator | — | this session |
-| `atelier-plan` | architect's planning discipline | Opus | this session |
+| `atelier-plan` | director's planning discipline | Opus | this session |
+| `atelier-brief` | expand a unit spec into a brief *(split tier)* | Sonnet | dispatched subagent |
 | `atelier-execute` | execute one unit | Haiku | dispatched subagent |
 | `atelier-check` | verify + fix one unit | Sonnet | dispatched subagent |
+
+## Planning tiers (who writes the briefs)
+
+- **direct** — Opus writes the contract *and* every brief. Fewest moving parts, one
+  translation boundary. Best for **few units / subtle, correctness-critical work**.
+- **split** — Opus (director) writes the contract + terse unit specs; **Sonnet**
+  brief-writers expand them in parallel (mirrors `local_code_gen`'s
+  Opus-contract → Sonnet-sprint flow). The bulky brief-writing drops to the
+  5×-cheaper tier and Opus's context stays lean. Best for **many units (≳ 6) /
+  mechanical briefs / scale**.
+- **hybrid** — Opus writes the 1–2 subtle units' briefs, Sonnet the routine rest.
+
+Rough rule: direct below ~5 units, split above — but it's per-task, and the subtle
+units can stay direct even in a split run. Authority follows the tier: Opus owns
+the contract (cross-unit), the brief-writer owns its unit (within-unit), so a
+within-unit fix routes to cheap Sonnet and only contract defects reach Opus.
 
 ## Usage
 

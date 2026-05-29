@@ -57,17 +57,42 @@ new infrastructure.
 
 ## Calibration principle
 
-Because Haiku is genuinely capable (unlike the tiny local model
-`local_code_gen` targets), briefs do **not** need byte-level pinning. The architect:
+Contract/brief exhaustiveness should scale **inversely with executor strength**.
+`local_code_gen` writes 600-line byte-pinned contracts (every field, a cross-module
+test on every edge, "what fails without this" everywhere) because its executor is a
+tiny local model (qwen3.6 / gemma) that infers nothing. **atelier's executor is
+Haiku — far stronger** — so it fills obvious fields, follows idiom, and resolves
+ordinary ambiguity itself.
 
-- pins **cross-unit / system-wide** decisions exhaustively (shared interfaces,
-  conventions, terminology, ownership, ordering) — these are the decisions the
-  executor must never have to make, and,
-- writes **within-unit** steps at the level Haiku needs to succeed, trusting
-  Haiku for ordinary implementation choices.
+Therefore the architect pins only what is **cross-unit AND genuinely ambiguous** —
+the few decisions two capable units would otherwise diverge on — and lets Haiku
+infer the rest. Because Opus/Sonnet output is the expensive component (see the cost
+note), **terseness is the goal, not thoroughness**: a cheap checker catch beats
+expensive over-specification on every unit. Cross-module tests are an opt-in tool
+for genuinely fragile seams, not a per-edge mandate. Briefs are "enough detail,"
+not "every byte."
 
-Briefs are "enough detail," not "every byte." The skill states this explicitly so
-the architect does not over-specify.
+## Planning tiers (who writes the briefs)
+
+Orthogonal to decomposition mode, atelier supports two ways to author the briefs,
+trading Opus output tokens against an extra tier + a translation boundary:
+
+- **direct** — Opus writes the contract and every brief (one translation boundary:
+  Opus → executor). Best for few units, subtle/high-coupling briefs, or
+  correctness-critical work.
+- **split** — Opus (director) writes the contract + terse unit specs, then Sonnet
+  `atelier-brief` writers expand each into a full brief, dispatched **in parallel**.
+  This mirrors `local_code_gen`'s Opus-contract → Sonnet-sprint enrichment flow
+  (`spec_to_sprints`), with within-unit authority for the writer and the contract
+  as truth. The bulky brief-writing moves to the 5×-cheaper tier and Opus's context
+  stays lean. Best for many units (≳ 6), mechanical briefs, or scale. **hybrid** is
+  allowed (Opus writes the subtle units, Sonnet the rest).
+
+Authority follows the tier and drives escalation: Opus owns the contract
+(cross-unit), the brief-writer owns its unit (within-unit). A within-unit brief
+defect routes to a cheap Sonnet re-write; only a contract defect reaches Opus.
+Both versions are kept so they can be A/B-tested; if split proves performant it is
+likely sufficient on its own.
 
 ## Decomposition modes
 
@@ -101,11 +126,12 @@ atelier's machinery exists only to keep *multiple* units consistent. If the task
   acceptance criteria, dispatch one executor, one checker. You keep "Haiku drafts,
   Sonnet verifies" without the orchestration overhead.
 
-## Skill family (4 skills)
+## Skill family (5 skills)
 
 ```
-atelier          orchestrator playbook (the architect runs this)
-atelier-plan     architect: decompose + write CONTRACT, BRIEFs, criteria
+atelier          orchestrator playbook (the architect/director runs this)
+atelier-plan     director: decompose + write CONTRACT; briefs (direct) or unit specs (split)
+atelier-brief    Sonnet: expand one unit spec into a full brief (split tier only)
 atelier-execute  executor: execute one brief  (dispatched as Haiku subagent)
 atelier-check    checker: verify + fix one unit (dispatched as Sonnet subagent)
 ```

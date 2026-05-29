@@ -5,6 +5,10 @@
 artifact extended segment by segment, sequential • layered = role-specialized
 passes over the whole artifact, sequential>
 
+**Planning tier:** direct | split | hybrid
+<direct = Opus writes the briefs • split = Opus writes terse UNIT-SPECS, Sonnet
+brief-writers expand them • hybrid = Opus writes the subtle units, Sonnet the rest>
+
 > The cross-unit architectural surface. Pin only what crosses a unit boundary —
 > the seams, not the interiors. Test for every line: *would two independent
 > executors have to agree on this for their outputs to fit together?* If no, it
