@@ -37,13 +37,21 @@ in one number — directly comparable to a direct run's `/cost`. **One fresh ses
 per (task × method), each in its own empty directory.** Don't reuse a session or a
 dir across runs, or the numbers contaminate.
 
-### The three methods (per task)
-Run the *same task spec* three ways so we triangulate quality vs cost:
-1. **direct-opus** — the quality baseline. Fresh session on Opus: paste the task,
-   "build this directly and make the tests pass."
-2. **direct-sonnet** — the cheap baseline. Same, on Sonnet.
-3. **atelier-split** — fresh session on Opus: paste the task, "use the atelier skill
-   in split tier to build this." (Skills are installed via the symlinks.)
+### The methods (per task)
+Run the *same task spec* multiple ways to triangulate quality vs cost. The `direct`
+arms are **single-agent, no skills, no subagents** (`--disable-slash-commands
+--disallowedTools Task`) — a clean, deterministic "the model does it itself" control.
+1. **direct-sonnet** — the realistic cheap baseline; the bar atelier most needs to beat.
+2. **direct-opus** — the expensive / quality anchor (no delegation).
+3. **atelier-split** — Opus orchestrates the tiered skill (Haiku exec, Sonnet check).
+
+**Optional 4th variant — `direct-opus + ad-hoc subagents` (no atelier).** Allow Opus
+the Task tool but no atelier skill. This *controls for delegation*: much of atelier's
+cost win is just "Haiku is cheaper than Opus," and a single-agent baseline can't
+separate that from atelier's structure. If atelier barely beats Opus-spawning-Haiku-
+ad-hoc, the structure isn't earning its complexity; if it clearly beats it, the
+contract/brief/verify discipline is the value. Run this later, when you want to prove
+the *structure* (not just the delegation) is worth it.
 
 ### Procedure (per run)
 ```
