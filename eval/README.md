@@ -72,6 +72,19 @@ priced in, compare `Total cost` as the bottom line. You may run arms in parallel
 separate windows (each session tracks its own usage) — but never two arms in one
 session.
 
+### Granularity you can and can't get (verified)
+- **Per task** — yes: fresh-session `Total cost` (includes subagents; they bill to
+  the session).
+- **Per tier** — yes: the `Usage by model` rows. In an atelier session these include
+  the subagents' haiku/sonnet usage, so the opus/sonnet/haiku rows ARE the tier split
+  with cache-correct $. This is the per-tier breakdown — use it.
+- **Per unit (per subagent)** — NOT reliably. The `subagent_tokens` figure in the
+  Agent tool result is **undocumented** (open CC feature requests #10164, #22625) and
+  is dominated by fixed per-subagent context overhead (~20k mostly-cached tokens just
+  to start — a no-op subagent reports ~21k), so it does not map to task cost. Do NOT
+  log it as cost. Per-unit would require parsing subagent transcript JSONL under
+  `~/.claude/projects/` — out of scope; per-task + per-tier are enough.
+
 ### What we're testing
 - **Does atelier-split beat direct-opus on cost** at equal quality (tests pass)?
 - **Does the win grow with task size** (small → large)? Expectation: small is

@@ -1,21 +1,23 @@
 # atelier eval — results
 
-Fill one row per (task × method). Get `$` and tokens from `/cost` at the end of each
-fresh session (includes subagents). "Tests" = did the task's `node --test` gate pass.
+Fill one row per (task × method) from `/status` at the end of each fresh session.
+`Total $` = Session Total cost (includes subagents). `opus/sonnet/haiku $` = the
+`Usage by model` rows (for atelier this is the tier split incl. subagents). "Tests" =
+did the task's gate pass.
 
 ## Experiment 1 — cost / quality
 
-| Task | Size | Method | Model(s) | Total $ | Total tokens | In/Out split | Tests pass | Escalations | Notes |
-|------|------|--------|----------|---------|--------------|--------------|------------|-------------|-------|
-| 01-wordfreq | small | direct-opus | opus | | | | | n/a | |
-| 01-wordfreq | small | direct-sonnet | sonnet | | | | | n/a | |
-| 01-wordfreq | small | atelier-split | opus+sonnet+haiku | | | | | | |
-| 02-taskstore | medium | direct-opus | opus | | | | | n/a | |
-| 02-taskstore | medium | direct-sonnet | sonnet | | | | | n/a | |
-| 02-taskstore | medium | atelier-split | opus+sonnet+haiku | | | | | | |
-| 03-jqlite | large | direct-opus | opus | | | | | n/a | |
-| 03-jqlite | large | direct-sonnet | sonnet | | | | | n/a | |
-| 03-jqlite | large | atelier-split | opus+sonnet+haiku | | | | | | |
+| Task | Size | Method | Total $ | opus $ | sonnet $ | haiku $ | Tests pass | Escalations | Notes |
+|------|------|--------|---------|--------|----------|---------|------------|-------------|-------|
+| 01-wordfreq | small | direct-opus | | | — | — | | n/a | |
+| 01-wordfreq | small | direct-sonnet | | — | | — | | n/a | |
+| 01-wordfreq | small | atelier-split | | | | | | | |
+| 02-taskstore | medium | direct-opus | | | — | — | | n/a | |
+| 02-taskstore | medium | direct-sonnet | | — | | — | | n/a | |
+| 02-taskstore | medium | atelier-split | | | | | | | |
+| 03-jqlite | large | direct-opus | | | — | — | | n/a | |
+| 03-jqlite | large | direct-sonnet | | — | | — | | n/a | |
+| 03-jqlite | large | atelier-split | | | | | | | |
 
 ### Generality probes (vary stack/type; run once each, not on the size curve)
 | Task | Type | Method | Model(s) | Total $ | Total tokens | Quality (gate) | Notes |
