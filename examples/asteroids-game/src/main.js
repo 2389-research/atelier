@@ -1,0 +1,64 @@
+import { createGame, update, fire } from './game.js';
+import { createInput } from './input.js';
+import { render } from './render.js';
+import { addScore } from './leaderboard.js';
+
+function init() {
+  // Only run this in a browser environment with a canvas
+  if (typeof document === 'undefined' || typeof window === 'undefined') {
+    return;
+  }
+
+  const canvas = document.getElementById('game');
+  if (!canvas) {
+    console.error('Canvas with id "game" not found');
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+  const input = createInput(window);
+  input.attach();
+
+  const state = createGame();
+
+  let lastTime = performance.now();
+  let lastFireState = false;
+
+  function gameLoop(now) {
+    const dt = Math.min((now - lastTime) / 1000, 0.016); // Cap dt to prevent large jumps
+    lastTime = now;
+
+    // Fire on rising edge of fire input
+    const currentFireState = input.state.fire;
+    if (currentFireState && !lastFireState) {
+      fire(state);
+    }
+    lastFireState = currentFireState;
+
+    // Update and render
+    update(state, input.state, dt);
+    render(ctx, state);
+
+    // On game over transition, add score to leaderboard
+    if (state.status === 'gameover' && state.lives === 0) {
+      // Only add score once by checking if we're still on gameover status
+      const name = prompt('Game Over! Enter your name:', 'PLAYER') || 'PLAYER';
+      addScore(state.leaderboard, name, state.score.value);
+      // Mark that we've added the score to prevent duplicates
+      state.lives = -1; // Use negative to signal we've processed game over
+    }
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+// Only call init if we're in a browser; run once when the DOM is ready.
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+}

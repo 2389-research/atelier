@@ -18,6 +18,26 @@ LEDGER). The ledger also records a separate fault-injection check: a planted
 `field_coverage` bug (returning counts not fractions) was caught by the checker,
 diagnosed `local`, and surgically fixed with the regression guard.
 
+## `asteroids-game/` — larger code task (partition mode, 7 units, dependency waves)
+
+A playable browser Asteroids game in vanilla JS (HTML5 Canvas, ES modules, zero
+deps): ship physics, asteroids that split, bullets, circle collision, scoring, a
+persistent top-10 **leaderboard**, a particle **effects** system (explosions +
+thrust), a canvas renderer with HUD + game-over leaderboard overlay, keyboard
+input, and the game-loop glue. ~14 files across **7 units**.
+
+This is the best demonstration of the architect's job: the contract pins the
+cross-unit seams (the Vector API, the entity shape, the **game-state shape** that
+render and game must agree on, collision/scoring/effects signatures, world
+constants) so the units compose. Dispatch ran in **4 dependency waves** with
+parallel Haiku executors per wave (1: math+scoring · 2: entities+effects ·
+3: collision+render/input · 4: game loop). **Zero escalations** — every unit's
+Sonnet checker re-ran `node --test`/`node --check` independently and passed; the
+pinned interfaces meant the parallel modules assembled without integration breakage.
+
+Play it: open `asteroids-game/index.html` in a browser.
+Verify: `cd asteroids-game && node --test` → 66 tests pass.
+
 ## `saltrest-dnd/` — creative writing (partition mode, assertional criteria)
 
 A playable D&D 5e adventure ("The Bones of Saltrest"), assembled from four units:
