@@ -86,3 +86,26 @@ executor this run would be ~$0.44 < direct. So tiered delegation pays when: the
 executor is free/near-free (local model), execution volume dwarfs the Opus-architect
 floor, or work is repeated / exceeds one context. For paid-Haiku small builds: use
 Opus/Sonnet directly.
+
+## CORRECTED FRAMING — execution-only (planning is a shared/sunk cost)
+
+Realistic usage: the plan is worked out WITH Opus in the normal session (sunk cost,
+incurred either way), then atelier *executes* it. So the fair benchmark hands the
+SAME plan to both arms and compares only execution. (The earlier "direct wins" tables
+wrongly charged atelier for planning-from-scratch.)
+
+Task 02, identical Sonnet-written contract+units handed to both, gate-verified:
+
+| (planning excluded) | execution cost | tests |
+|---------------------|----------------|-------|
+| **atelier** (Haiku executes the units) | **$0.240** | 24/24 |
+| **direct** (Opus implements the plan)  | $0.391 | 21/21 |
+
+**atelier ~39% cheaper (1.6×) at equal quality** — the honest verdict for atelier as
+an EXECUTION engine. (direct-from-plan $0.391 is itself well below direct-from-spec
+$0.634 — handing Opus the plan saved its figuring-out; fair, and atelier still wins.)
+
+Caveats: (1) win assumes the handoff includes per-unit chunking; if atelier must chunk
+at exec time (+~$0.13 Sonnet) it's ~a tie. (2) cost noise is real (Haiku exec varied
+$0.24–0.34); direction solid, magnitude noisy — run 2–3× for a firm number. (3) win
+amplifies with execution volume and especially a FREE local executor (atelier-exec ~$0).
