@@ -133,8 +133,12 @@ def run_gate(cmd):
     return p.returncode == 0, (p.stdout + p.stderr)[-4000:]
 
 def fix(gate_out):
-    files = sorted(set(glob.glob("src/**/*", recursive=True) + glob.glob("test/**/*", recursive=True)))
-    files = [f for f in files if os.path.isfile(f)]
+    # discover source/test files by extension across the whole workspace, so the repair
+    # context covers JS (src/, test/), Python (pkg/, tests/), and Go (graph/, main.go)
+    # layouts — not just src/ + test/.
+    exts = (".js", ".mjs", ".ts", ".py", ".go")
+    files = sorted(f for f in glob.glob("**/*", recursive=True)
+                   if os.path.isfile(f) and f.endswith(exts) and "node_modules/" not in f)
     blob = "\n".join(f'<FILE path="{f}">\n{open(f).read()}\n</FILE>' for f in files)
     prompt = ("Some tests are failing. Diagnose and fix. Output corrected versions of ONLY the files "
         "that need changing, each wrapped <FILE path=\"...\">...</FILE>, no prose.\n\n"

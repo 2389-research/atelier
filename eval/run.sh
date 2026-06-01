@@ -13,6 +13,8 @@ EVAL_DIR="$(cd "$(dirname "$0")" && pwd)"
 TASK="$1"; METHOD="$2"; MODEL="$3"
 SPEC_FILE="$EVAL_DIR/tasks/$(basename "$TASK")"
 [ -f "$SPEC_FILE" ] || { echo "task not found: $SPEC_FILE" >&2; exit 1; }
+# MODEL feeds RUN_DIR and `rm -rf`; constrain it so a malformed value can't escape the run dir.
+case "$MODEL" in opus|sonnet|haiku) ;; *) echo "unknown model: '$MODEL' (expected opus | sonnet | haiku)" >&2; exit 2 ;; esac
 
 slug="$(basename "$TASK" .md)"
 RUN_DIR="$EVAL_DIR/runs/${slug}__${METHOD}__${MODEL}"
