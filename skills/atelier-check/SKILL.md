@@ -68,7 +68,7 @@ orchestrator's to dispatch.
 
 ## 4. Report the structured verdict (your final message)
 
-```
+```text
 unit: <UNIT-ID>
 criteria:
   - id: <c1>  pass: true|false   evidence: "<command output / what you checked>"

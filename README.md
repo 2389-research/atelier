@@ -19,7 +19,7 @@ The configuration that won the cost/quality bake-off (spec → working code, 7 t
 JS / Python / Go / prose, gate-verified — see [`eval/RESULTS.md`](eval/RESULTS.md) and
 [`experiments/`](experiments/README.md)):
 
-```
+```text
 spec ──▶ Sonnet  writes contract (pins cross-sprint + genuinely-ambiguous decisions)
                  + sprints.jsonl (one self-contained unit of work each)
             │

@@ -37,7 +37,7 @@ file formats, shared section structures, shared keys. Name which unit owns each.
 ## Dependency graph
 <List edges. Independent units may run in parallel; dependents wait.>
 
-```
+```text
 UNIT-001, UNIT-002   (independent)
         ↓
 UNIT-003             (depends on 001, 002)

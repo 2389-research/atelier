@@ -18,7 +18,7 @@ it correctly**. You (Opus, the architect) do the thinking that genuinely needs a
 strong model — decomposition, cross-cutting decisions, defining what "done" means,
 and strategic fixes. Everything else is pushed down to cheaper, faster models.
 
-```
+```text
 architect (Opus, you)   plan: contract + briefs + acceptance criteria
         │
         ▼
@@ -132,7 +132,7 @@ parallelize. Each executor reads the shared artifact's current state and
 extends it (relay) or applies its pass (layered). Check each unit before
 dispatching the next, so continuity errors are caught before they compound.
 
-```
+```text
 Agent(
   subagent_type: general-purpose,
   model: "haiku",
@@ -168,7 +168,7 @@ spend it only where judgment is actually needed.**
      and judge *those dimensions*. It need not re-read code that already passed its
      gate; point it at what requires judgment.
 
-```
+```text
 Agent(
   subagent_type: general-purpose,
   model: "sonnet",

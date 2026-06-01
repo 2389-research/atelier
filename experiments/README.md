@@ -34,7 +34,7 @@ captured cost data for the final, clean comparison.
 | | | **→ atelier 64% cheaper (2.8×)** |
 
 Reproduce:
-```
+```text
 bash scripts/run_atelier_flow.sh     /tmp/atelier_flow      # data/atelier_flow.csv
 bash scripts/run_opus_from_spec.sh   /tmp/opus_from_spec    # data/opus_from_spec.csv
 # then re-verify every gate by hand (cd into each task dir, run its gate)

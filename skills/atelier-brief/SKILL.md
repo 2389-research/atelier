@@ -112,7 +112,7 @@ shorter than your draft, not longer.
 
 ## 5. Report (your final message — the return value)
 
-```
+```text
 unit: <UNIT-ID>
 brief: briefs/<UNIT-ID>.md   (written)
 approach_sizing: terse | detailed — <one line why>
