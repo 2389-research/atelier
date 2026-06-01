@@ -19,6 +19,8 @@ bumps it** so `/plugin` installs pick the change up cleanly.
   baseline it beats, not a tier it runs. Reframed split tier's rationale to parallelism +
   lean architect context.
 - Stopped tracking compiled Python bytecode; gitignored `__pycache__/` + `*.pyc`.
+- Added an MIT `LICENSE` (matches the 2389 plugin marketplace convention) and set
+  `license: "MIT"` in the manifests.
 
 ## [0.1.0]
 
