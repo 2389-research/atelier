@@ -14,6 +14,7 @@
       "homepage": "https://github.com/2389-research/atelier",
       "repository": "https://github.com/2389-research/atelier",
       "keywords": ["orchestration", "delegation", "tiered-build", "multi-agent", "cost"],
+      "license": "MIT",
       "category": "productivity"
     }
   ]
