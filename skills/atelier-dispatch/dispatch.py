@@ -76,7 +76,11 @@ def plan():
         + (f"AGENDA:\n{agenda}\n\n" if agenda else "") + f"TASK SPEC:\n{spec}\n")
     text, cost = call_model(prompt, "sonnet", system=SYS_PLAN)
     files = write_files(text)
-    json.dump({"plan_cost_usd": round(cost,5), "files": files}, open("plan_manifest.json","w"), indent=2)
+    ok = {"contract.md", "sprints.jsonl"}.issubset(set(files))
+    json.dump({"plan_cost_usd": round(cost,5), "files": files, "ok": ok}, open("plan_manifest.json","w"), indent=2)
+    if not ok:   # model call failed or produced incomplete output — don't proceed to execute
+        sys.stderr.write(f"[plan] FAILED: expected contract.md + sprints.jsonl, got {files}. Aborting.\n")
+        sys.exit(1)
     print(f"[plan] sonnet ${cost:.4f} -> {files}")
     return cost
 

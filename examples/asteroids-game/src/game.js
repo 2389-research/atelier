@@ -69,7 +69,8 @@ export function update(state, input, dt) {
   // Collision: bullets vs asteroids
   const bulletHits = bulletsVsAsteroids(state.bullets, state.asteroids);
   for (const { bullet, asteroid } of bulletHits) {
-    bullet.alive = false;
+    bullet.alive = false;           // consume the bullet regardless
+    if (!asteroid.alive) continue;  // already destroyed this tick — no double score/explosion/split
 
     const asteroidSize = asteroid.radius === 46 ? 'large' : asteroid.radius === 24 ? 'medium' : 'small';
     addPoints(state.score, asteroidSize);

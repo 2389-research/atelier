@@ -9,6 +9,10 @@ if (!filePath) {
 }
 
 const n = nArg ? parseInt(nArg, 10) : 10;
+if (Number.isNaN(n) || n < 1) {
+  console.error(`Usage: node src/cli.js <file> [n]  (n must be a positive integer, got "${nArg}")`);
+  process.exit(1);
+}
 
 try {
   const text = fs.readFileSync(filePath, 'utf-8');

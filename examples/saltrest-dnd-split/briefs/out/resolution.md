@@ -12,7 +12,7 @@ The party fortifies Saltrest and holds the breakwater against the Choir's assaul
 
 The party chooses to help Coria grant the drowned peace by recovering and reading the Seraphine ledger aloud.
 
-**Recovery:** The clock begins when the ledger touches saltwater with intent to destroy it. The party has **5 rounds** to retrieve it. To do so, a character must succeed on a **DC 15 Strength (Athletics) check**. Success pulls it from the water, brine-sodden but intact. If it is not recovered within those **5 rounds**, the ledger dissolves completely—pages scatter into pulp, names wash into the sea. This path closes forever.
+**Recovery:** The clock begins when the ledger touches saltwater with intent to destroy it. By **round 5** it is fully submerged—recovering it then requires a **DC 15 Strength (Athletics) check** (success pulls it free, brine-sodden but intact; failure means it sinks further). If it is not recovered by **round 10**, the ledger dissolves completely—pages scatter into pulp, names wash into the sea. This path closes forever.
 
 **Reading:** If recovered in time, a character reads all 143 names aloud while the Choir presses in. With each name spoken, a thrall's eyes clear and they sink gently back into rest. The water grows calmer. By the final name, the Vault is silent. The leviathan horror stills and sinks. Coria stands witness, tears streaming, her work completed. She does not resist but offers the party a boon: knowledge of the Seraphine wreck's location, deep below the cove. With that intelligence, the party can ensure no future necromancer disturbs those depths with greed or malice.
 

@@ -45,11 +45,13 @@ test('createAsteroid creates asteroid with correct shape', () => {
 test('createAsteroid has random drift velocity', () => {
   const a1 = createAsteroid(0, 0, 'medium');
   const a2 = createAsteroid(0, 0, 'medium');
-  // Both should have different velocities (very unlikely to be identical)
   const vel1Len = length(a1.vel);
   const vel2Len = length(a2.vel);
   assert.ok(vel1Len > 0);
   assert.ok(vel2Len > 0);
+  // the drift must actually be RANDOM: two asteroids should not share an identical
+  // velocity vector (a hard-coded fixed drift would still pass the >0 checks above)
+  assert.ok(a1.vel.x !== a2.vel.x || a1.vel.y !== a2.vel.y, 'drift velocities should differ');
 });
 
 test('createBullet creates bullet with correct initial state', () => {

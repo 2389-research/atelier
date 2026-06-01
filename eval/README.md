@@ -54,7 +54,7 @@ contract/brief/verify discipline is the value. Run this later, when you want to 
 the *structure* (not just the delegation) is worth it.
 
 ### Procedure (per run)
-```
+```text
 1. mkdir a fresh empty dir; cd into it; copy in the task spec.
 2. Start a fresh Claude Code session there. Set the model for this arm:
      /model opus    -> direct-opus, and atelier (Opus is the orchestrator)
@@ -82,7 +82,7 @@ session.
 
 ### Automated alternative — headless (verified)
 Instead of reading `/status` by hand, run each problem headless and parse the JSON:
-```
+```bash
 ./run.sh tasks/01-wordfreq.md atelier opus     # -> prints total_cost_usd (subagents included)
 ./run.sh tasks/01-wordfreq.md direct  sonnet
 ```
@@ -165,7 +165,7 @@ per-tier token numbers + pass/fail + the run ledgers.
 Because atelier runs as Claude Code subagents (not a single CLI command), the loop is
 **hybrid**, not fully auto-runnable:
 
-```
+```text
 round:
   1. JUDGE reads: the current skill prompts + the latest RESULTS.md row(s) + the run
      ledgers (docs/atelier/*/LEDGER.md from the eval runs).
@@ -177,7 +177,7 @@ round:
 ```
 
 ### simmer setup brief (proposed)
-```
+```text
 ARTIFACT_TYPE: workspace  (the skills/atelier* prompts)
 CRITERIA:
   - cost: lower total weighted tokens (Opus 5x, Sonnet 3x, Haiku 1x) at held quality — PRIMARY

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run one benchmark task headless and capture its total cost (subagents included).
 #
-#   ./run.sh <task-file> <direct|atelier> <opus|sonnet>
+#   ./run.sh <task-file> <atelier|dispatch|subagents|direct> <opus|sonnet>
 #
 # Each run executes in its own throwaway dir under runs/. The cost printed is
 # total_cost_usd from the headless JSON result, which INCLUDES subagent cost

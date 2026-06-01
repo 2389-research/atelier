@@ -5,7 +5,7 @@ export function createScore() {
 }
 
 export function scoreForSize(size) {
-  return ASTEROID_SCORES[size];
+  return ASTEROID_SCORES[size] ?? 0; // unknown size scores 0 rather than corrupting score with NaN
 }
 
 export function addPoints(score, size) {
