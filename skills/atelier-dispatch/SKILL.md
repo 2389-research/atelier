@@ -36,7 +36,9 @@ outputs go to disk, not into your context.
    ```json
    {"id":"SPRINT-001","tier":"haiku","kind":"generate","deps":[],"brief":"...terse brief + acceptance criteria..."}
    ```
-   - `tier`: `haiku` (execution / pattern-heavy codegen) or `sonnet` (reasoning-heavy).
+   - `tier`: `generate` sprints **always run on Haiku** (the script forces it) — codegen
+     never escalates. If a unit feels too hard for Haiku, **split it into smaller sprints**;
+     do not reach for a stronger executor. Sonnet is used only for planning and the fix loop.
    - `kind`: `generate` (model emits `<FILE path="...">...</FILE>` blocks → script writes
      them) or `brief` (model emits markdown → saved to `briefs/<id>.md`).
    - `deps`: sprint ids that must finish first (script runs in dependency waves, parallel
