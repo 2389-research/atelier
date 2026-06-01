@@ -17,6 +17,7 @@ export function bulletsVsAsteroids(bullets, asteroids) {
 
       if (circleHit(bullet, asteroid)) {
         hits.push({ bullet, asteroid });
+        break; // consume the bullet on first hit — one bullet can't hit two asteroids in a tick
       }
     }
   }

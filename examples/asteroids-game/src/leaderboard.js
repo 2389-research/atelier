@@ -27,6 +27,11 @@ export function getTop(lb, n = 10) {
   if (!stored) {
     return [];
   }
-  const entries = JSON.parse(stored);
-  return entries.slice(0, n);
+  let entries;
+  try {
+    entries = JSON.parse(stored);
+  } catch {
+    return []; // corrupted storage value — don't break rendering on game-over
+  }
+  return Array.isArray(entries) ? entries.slice(0, n) : [];
 }

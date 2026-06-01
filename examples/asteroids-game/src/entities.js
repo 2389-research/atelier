@@ -58,8 +58,8 @@ export function updateShip(ship, input, dt) {
     ship.vel = add(ship.vel, thrustVec);
   }
 
-  // Apply friction
-  ship.vel = scale(ship.vel, SHIP.friction);
+  // Apply friction, frame-rate independent (SHIP.friction is tuned for ~60 FPS)
+  ship.vel = scale(ship.vel, Math.pow(SHIP.friction, dt * 60));
 
   // Clamp to max speed
   ship.vel = limit(ship.vel, SHIP.maxSpeed);

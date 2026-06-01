@@ -16,7 +16,11 @@ export function loadRecords(filePath) {
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed) {
-      records.push(JSON.parse(trimmed));
+      const parsed = JSON.parse(trimmed);
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error(`Each non-blank line must be a JSON object, got: ${trimmed.slice(0, 50)}`);
+      }
+      records.push(parsed);
     }
   }
 

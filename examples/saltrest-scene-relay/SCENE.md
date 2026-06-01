@@ -20,7 +20,7 @@ The villagers drew back by slow increments, as though pulled. Vell felt it too�
 
 Then the fisherman's daughter spoke, her voice small but clear. "The Mayor. He went out alone to the caves, seven days past. No word since. No boat back."
 
-The words fell like a stone into still water. Mayor Halrik. Of course. The absence she'd been feeling all morning was not only the wrongness of the sea, but the wrongness of his silence—his daily walk along the strand, his presence at the inn. Gone. And these strangers coming now, just as the catch had turned to bone. Vell's hand tightened on her shawl. She needed to speak to them. Whatever they were, wherever they had come from, they needed to know what Saltrest had become. She needed to know what they would do about it.
+The words fell like a stone into still water. Mayor Halrik. Of course. The absence she'd been feeling all morning was not only the wrongness of the sea, but the wrongness of his silence—his daily walk along the strand, his presence at the Salted Anchor. Gone. And these strangers coming now, just as the catch had turned to bone. Vell's hand tightened on her shawl. She needed to speak to them. Whatever they were, wherever they had come from, they needed to know what Saltrest had become. She needed to know what they would do about it.
 
 She took a breath and began to move through the crowd toward them.
 

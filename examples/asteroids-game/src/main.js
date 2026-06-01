@@ -16,16 +16,20 @@ function init() {
   }
 
   const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    console.error('2D canvas context is unavailable');
+    return;
+  }
   const input = createInput(window);
   input.attach();
 
-  const state = createGame();
+  const state = createGame({ storage: window.localStorage });
 
   let lastTime = performance.now();
   let lastFireState = false;
 
   function gameLoop(now) {
-    const dt = Math.min((now - lastTime) / 1000, 0.016); // Cap dt to prevent large jumps
+    const dt = Math.min((now - lastTime) / 1000, 0.05); // cap only extreme frame gaps (don't force 60 FPS)
     lastTime = now;
 
     // Fire on rising edge of fire input
