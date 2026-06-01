@@ -125,7 +125,11 @@ def execute():
                         sys.stderr.write(f"[dispatch] REFUSED brief path outside workspace: {out}\n"); files = []
                 else:
                     files = write_files(text, root)
-                manifest.append({"id":s["id"],"tier":s.get("tier"),"kind":s.get("kind","generate"),
+                # record the model that ACTUALLY ran, not the plan's intent: generate sprints
+                # are forced to Haiku above, so a plan that wrote tier:"sonnet" must not show
+                # up as sonnet in the manifest (these manifests are our cost-attribution truth).
+                actual_tier = s.get("tier","sonnet") if s.get("kind") == "brief" else "haiku"
+                manifest.append({"id":s["id"],"tier":actual_tier,"kind":s.get("kind","generate"),
                                  "cost_usd":round(cost,5),"files":files,"ok":bool(files)})
                 del pending[s["id"]]
                 if files:
