@@ -37,6 +37,28 @@ cold-call bloat), and the contract **pins every decision that crosses a sprint b
 so the executor never invents a system-level choice (leave one ambiguous and the executor
 writes contradictory tests). Opus is *not* in the execution loop.
 
+## Install
+
+atelier ships as a Claude Code **plugin** (bundles all six skills):
+
+```text
+/plugin marketplace add 2389-research/atelier
+/plugin install atelier@atelier
+```
+
+Then trigger it with **"atelier"**, **"delegate this"**, or **"tiered build"**.
+
+> The subagent-based skills (`atelier`, `atelier-plan/brief/execute/check`) need no
+> external runtime. The lean `atelier-dispatch` flow shells out to
+> `skills/atelier-dispatch/dispatch.py`, so it additionally requires **Python 3** on
+> `PATH`.
+
+To hack on it locally instead, symlink the skills into `~/.claude/skills/`:
+
+```text
+for d in skills/*/; do ln -s "$PWD/$d" ~/.claude/skills/; done
+```
+
 ## Lineage
 
 atelier generalizes three existing systems to arbitrary tasks:
