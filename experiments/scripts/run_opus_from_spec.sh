@@ -29,13 +29,15 @@ $(cat "$TASKS/$(spec_for "$n").md")"
 --- SPEC ---
 $(cat "$TASKS/$(spec_for "$n").md")"
   fi
-  ( cd "$d" && claude -p "$P" --output-format json --model opus --permission-mode bypassPermissions \
-      --disable-slash-commands --disallowedTools Task "${NOMCP[@]}" >result.json 2>err.log || true ) &
+  ( cd "$d" && { claude -p "$P" --output-format json --model opus --permission-mode bypassPermissions \
+      --disable-slash-commands --disallowedTools Task "${NOMCP[@]}" >result.json 2>err.log \
+      || echo "[WARN] task $n: opus call failed rc=$? (see $d/err.log)" >&2; } ) &
 done; wait
 
 for n in 01 02 03 04 05 06 07; do
   d="$BASE/$n"
-  read -r c t < <(python3 -c "import json;d=json.load(open('$d/result.json'));print(round(d.get('total_cost_usd',0),4),d.get('num_turns'))" 2>/dev/null || echo "0 0")
+  # ERR (not 0) if the result is missing/unparseable, so a failed run is visible in the CSV
+  read -r c t < <(python3 -c "import json;d=json.load(open('$d/result.json'));print(round(d['total_cost_usd'],4),d.get('num_turns'))" 2>/dev/null || echo "ERR ERR")
   echo "$n,$c,$t," >> "$CSV"
 done
 echo "=== RESULTS (verify gates yourself, then fill the gate column) ==="; cat "$CSV"

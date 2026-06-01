@@ -18,7 +18,10 @@ echo "task,plan_usd,haiku_usd,fix_usd,total_usd,gate" > "$CSV"
 
 spec_for () { case "$1" in 01) echo 01-wordfreq;; 02) echo 02-taskstore;; 03) echo 03-jqlite;; 04) echo 04-pysummary;; 05) echo 05-comparison-brief;; 06) echo 06-ledger;; 07) echo 07-taskgraph;; esac; }
 gate_for () { case "$1" in 01|02|03) echo "node --test";; 04|06) echo "python -m pytest";; 07) echo "go test ./...";; *) echo "";; esac; }
-cost () { python3 -c "import json,sys;print(round(json.load(open(sys.argv[1])).get('total_cost_usd',0),4))" "$1" 2>/dev/null || echo 0; }
+# cost prints the number, or ERR if the result file is missing/unparseable (a failed
+# `claude` call) — so a failure shows as ERR in the CSV instead of a silent $0.
+cost () { python3 -c "import json,sys;print(round(json.load(open(sys.argv[1]))['total_cost_usd'],4))" "$1" 2>/dev/null || echo ERR; }
+sum3 () { python3 -c "import sys;v=sys.argv[1:];print('ERR' if any(not x.replace('.','',1).isdigit() for x in v) else round(sum(float(x) for x in v),4))" "$@"; }
 
 # PHASE 1 — Sonnet writes contract + sprints (parallel)
 for n in 01 02 03 04 05 06 07; do
@@ -46,8 +49,9 @@ $(cat "$d/contract.md")
 === SPRINTS ===
 $(cat "$d/sprints.jsonl")"
   fi
-  ( cd "$d" && claude -p "$P" --output-format json --model haiku --permission-mode bypassPermissions \
-      --disable-slash-commands --disallowedTools Task "${NOMCP[@]}" >haiku.json 2>haiku.err || true ) &
+  ( cd "$d" && { claude -p "$P" --output-format json --model haiku --permission-mode bypassPermissions \
+      --disable-slash-commands --disallowedTools Task "${NOMCP[@]}" >haiku.json 2>haiku.err \
+      || echo "[WARN] task $n: haiku call failed rc=$? (see $d/haiku.err)" >&2; } ) &
 done; wait; echo "[phase2: Haiku exec done]"
 
 # PHASE 3 — gate; Sonnet scoped fix only if still red
@@ -63,12 +67,12 @@ $(cd "$d" && eval "$g" 2>&1 | tail -40)"
     fix=$(cost "$d/fix.json")
     ( cd "$d" && eval "$g" >gate2.log 2>&1 ) && gate="PASS(after fix)" || gate="FAIL"
   }
-  plan=$(python3 -c "import json;print(round(json.load(open('$d/plan_manifest.json'))['plan_cost_usd'],4))" 2>/dev/null||echo 0)
-  haiku=$(cost "$d/haiku.json"); total=$(python3 -c "print(round($plan+$haiku+$fix,4))")
+  plan=$(python3 -c "import json;print(round(json.load(open('$d/plan_manifest.json'))['plan_cost_usd'],4))" 2>/dev/null||echo ERR)
+  haiku=$(cost "$d/haiku.json"); total=$(sum3 "$plan" "$haiku" "$fix")
   echo "$n,$plan,$haiku,$fix,$total,$gate" >> "$CSV"
 done
 # 05 (no runnable gate; judge BRIEF.md by hand)
-d="$BASE/05"; plan=$(python3 -c "import json;print(round(json.load(open('$d/plan_manifest.json'))['plan_cost_usd'],4))" 2>/dev/null||echo 0)
-haiku=$(cost "$d/haiku.json"); total=$(python3 -c "print(round($plan+$haiku,4))")
+d="$BASE/05"; plan=$(python3 -c "import json;print(round(json.load(open('$d/plan_manifest.json'))['plan_cost_usd'],4))" 2>/dev/null||echo ERR)
+haiku=$(cost "$d/haiku.json"); total=$(sum3 "$plan" "$haiku")
 echo "05,$plan,$haiku,0,$total,BRIEF(manual)" >> "$CSV"
 echo "=== RESULTS ==="; cat "$CSV"

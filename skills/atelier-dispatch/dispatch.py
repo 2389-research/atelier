@@ -26,24 +26,37 @@ SYS_EXEC = ('You are an expert programmer. You write EXACTLY ONE file from the b
             'nothing before or after the FILE block. Be terse and correct.')
 SYS_PLAN = ('You are a software architect. Output ONLY the requested files, each wrapped '
             'as <FILE path="...">...</FILE>, nothing else. Be precise and lean.')
+SYS_BRIEF = ('You are a planner. Output ONLY a terse build brief in markdown — bullets plus '
+             'concrete acceptance criteria for a capable executor. No preamble, no code fences.')
 
 def call_model(prompt, model, system=None):
     cmd = ["claude","-p",prompt,"--model",model,"--bare","--output-format","json"]
     if system: cmd += ["--system-prompt", system]
     p = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+    if p.returncode != 0:
+        # surface the failure rather than silently returning empty/partial output that
+        # would later read as a (falsely) successful sprint with no artifacts.
+        sys.stderr.write(f"[dispatch] model call FAILED rc={p.returncode} ({model}): {p.stderr[:300]}\n")
+        return "", 0.0
     try:
         d = json.loads(p.stdout); return d.get("result",""), float(d.get("total_cost_usd",0) or 0)
     except Exception:
-        sys.stderr.write(f"[dispatch] parse fail: {p.stdout[:200]} {p.stderr[:200]}\n"); return p.stdout, 0.0
+        sys.stderr.write(f"[dispatch] parse fail ({model}): {p.stdout[:200]} {p.stderr[:200]}\n")
+        return "", 0.0   # not p.stdout — never treat unparseable output as file content
 
 FILE_RE = re.compile(r'<FILE path="([^"]+)">\r?\n?(.*?)\r?\n?</FILE>', re.DOTALL)
 def write_files(text, root="."):
+    """Write each <FILE> block, but REFUSE any path that escapes the workspace root
+    (a model-emitted `../../x` or `/etc/x` must never overwrite arbitrary files)."""
     written = []
+    root_path = pathlib.Path(root).resolve()
     for m in FILE_RE.finditer(text):
         rel, content = m.group(1), m.group(2)
-        path = os.path.join(root, rel)
-        pathlib.Path(os.path.dirname(path) or ".").mkdir(parents=True, exist_ok=True)
-        open(path, "w").write(content if content.endswith("\n") else content + "\n")
+        target = (root_path / rel).resolve()
+        if target != root_path and root_path not in target.parents:
+            sys.stderr.write(f"[dispatch] REFUSED path outside workspace: {rel}\n"); continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content if content.endswith("\n") else content + "\n")
         written.append(rel)
     return written
 
@@ -68,22 +81,43 @@ def plan():
     return cost
 
 def execute():
+    root = os.getcwd()
     contract = open("contract.md").read() if os.path.exists("contract.md") else ""
     sprints = [json.loads(l) for l in open("sprints.jsonl") if l.strip()]
     pending = {s["id"]: s for s in sprints}; done, manifest, total = set(), [], 0.0
-    def prompt_for(s):
-        return f"CONTRACT:\n{contract}\n\nYOUR SPRINT BRIEF (write exactly one file):\n{s.get('brief','')}\n"
+    def call_for(s):
+        # kind "brief" -> emit markdown (saved to briefs/<id>.md); else -> emit <FILE> blocks
+        if s.get("kind") == "brief":
+            return call_model(f"CONTRACT:\n{contract}\n\nWrite the brief for this sprint:\n{s.get('brief','')}\n",
+                              s.get("tier","sonnet"), SYS_BRIEF)
+        return call_model(f"CONTRACT:\n{contract}\n\nYOUR SPRINT BRIEF (write exactly one file):\n{s.get('brief','')}\n",
+                          s.get("tier","haiku"), SYS_EXEC)
     while pending:
-        ready = [s for s in pending.values() if all(d in done for d in s.get("deps", []))] or list(pending.values())
+        ready = [s for s in pending.values() if all(d in done for d in s.get("deps", []))]
+        if not ready:   # unresolved deps or a cycle — do NOT silently run everything
+            sys.stderr.write(f"[dispatch] ERROR: unresolved deps / dependency cycle among {sorted(pending)}; aborting.\n")
+            break
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
-            futs = {ex.submit(call_model, prompt_for(s), s.get("tier","haiku"), SYS_EXEC): s for s in ready}
+            futs = {ex.submit(call_for, s): s for s in ready}
             for fut in concurrent.futures.as_completed(futs):
                 s = futs[fut]; text, cost = fut.result(); total += cost
-                files = write_files(text)
-                manifest.append({"id":s["id"],"tier":s.get("tier"),"cost_usd":round(cost,5),"files":files})
+                if s.get("kind") == "brief":
+                    out = s.get("out", f"briefs/{s['id']}.md")
+                    op = (pathlib.Path(root) / out).resolve()
+                    if op != pathlib.Path(root).resolve() and pathlib.Path(root).resolve() in op.parents:
+                        op.parent.mkdir(parents=True, exist_ok=True); op.write_text(text); files = [out]
+                    else:
+                        sys.stderr.write(f"[dispatch] REFUSED brief path outside workspace: {out}\n"); files = []
+                else:
+                    files = write_files(text, root)
+                if not files:
+                    sys.stderr.write(f"[dispatch] WARNING: {s['id']} produced no output (treating as failed sprint)\n")
+                manifest.append({"id":s["id"],"tier":s.get("tier"),"kind":s.get("kind","generate"),
+                                 "cost_usd":round(cost,5),"files":files,"ok":bool(files)})
                 done.add(s["id"]); del pending[s["id"]]
-    json.dump({"sprints":manifest,"dispatch_cost_usd":round(total,4)}, open("manifest.json","w"), indent=2)
-    print(f"[execute] {len(manifest)} sprints, haiku ${total:.4f}")
+    json.dump({"sprints":manifest,"dispatch_cost_usd":round(total,4),
+               "all_ok":all(m["ok"] for m in manifest) and not pending}, open("manifest.json","w"), indent=2)
+    print(f"[execute] {len(manifest)} sprints, ${total:.4f}" + ("" if not pending else f" (ABORTED: {len(pending)} unrun)"))
     return total
 
 def run_gate(cmd):

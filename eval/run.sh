@@ -41,10 +41,14 @@ case "$METHOD" in
     # "delegation" — does naive subagent use get the win without atelier's structure?
     INSTR="First plan your approach to the task below, then implement it. You MAY delegate parts of the work to subagents via the Task tool if you judge it helpful, and you may run those subagents on cheaper models (e.g. haiku) for simpler parts — there is no required structure, organize it however you see fit. No skills or slash commands are available. $DONE_BAR"
     FLAGS=(--disable-slash-commands) ;;
-  direct|*)
+  direct)
     # clean baseline: single-agent Opus, NO skills, NO subagents (deterministic).
     INSTR="First plan your approach to the task below, then implement it directly yourself, in this one session. No skills, plugins, slash commands, or subagents are available — do not attempt to use any. $DONE_BAR"
     FLAGS=(--disable-slash-commands --disallowedTools Task) ;;
+  *)
+    # reject unknown methods rather than silently running the baseline (a typo'd
+    # <method> would otherwise invalidate the experiment row and cost comparison).
+    echo "unknown method: '$METHOD' (expected: atelier | dispatch | subagents | direct)" >&2; exit 2 ;;
 esac
 
 PROMPT="$INSTR

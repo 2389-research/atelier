@@ -2,7 +2,7 @@
 
 **Tiered-delegation task execution for Claude Code.** A planner model writes the spec
 into sprints, a cheap model executes and self-verifies against the gate — same gate
-quality as the strong model, **~64% of the cost** ([benchmarked](eval/RESULTS.md)).
+quality as the strong model, **~64% cheaper** (≈⅓ the cost) ([benchmarked](eval/RESULTS.md)).
 
 > Offload each sprint of work to the **weakest model that can do it correctly.**
 
@@ -134,9 +134,11 @@ decides and counts:
 
 A regression guard rolls back any fix that breaks a previously-passing criterion.
 
-## Design
+## Design & evidence
 
-See [`docs/superpowers/specs/2026-05-28-atelier-design.md`](docs/superpowers/specs/2026-05-28-atelier-design.md).
+The benchmarked architecture and the full cost/quality investigation (including the
+approaches we tried and rejected) are in [`eval/RESULTS.md`](eval/RESULTS.md); reproducible
+scripts + captured data are in [`experiments/`](experiments/README.md).
 
 ## Two implementations
 
