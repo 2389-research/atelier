@@ -29,6 +29,11 @@ SYS_PLAN = ('You are a software architect. Output ONLY the requested files, each
 SYS_BRIEF = ('You are a planner. Output ONLY a terse build brief in markdown — bullets plus '
              'concrete acceptance criteria for a capable executor. No preamble, no code fences.')
 
+def log(msg):
+    # flushed so progress streams live to a watcher (the orchestrator tailing this in the
+    # background) instead of buffering until the process exits.
+    print(msg, flush=True)
+
 def call_model(prompt, model, system=None):
     cmd = ["claude","-p",prompt,"--model",model,"--bare","--output-format","json"]
     if system: cmd += ["--system-prompt", system]
@@ -83,14 +88,16 @@ def plan():
         "stronger executor (that's what burns the cost win). Sonnet is used only here, for "
         "planning, and for the post-gate fix loop.\n\n"
         + (f"AGENDA:\n{agenda}\n\n" if agenda else "") + f"TASK SPEC:\n{spec}\n")
+    log("[plan] architecting contract + sprints (sonnet)...")
     text, cost = call_model(prompt, "sonnet", system=SYS_PLAN)
     files = write_files(text)
     ok = {"contract.md", "sprints.jsonl"}.issubset(set(files))
+    n = sum(1 for l in open("sprints.jsonl") if l.strip()) if os.path.exists("sprints.jsonl") else 0
     json.dump({"plan_cost_usd": round(cost,5), "files": files, "ok": ok}, open("plan_manifest.json","w"), indent=2)
     if not ok:   # model call failed or produced incomplete output — don't proceed to execute
         sys.stderr.write(f"[plan] FAILED: expected contract.md + sprints.jsonl, got {files}. Aborting.\n")
         sys.exit(1)
-    print(f"[plan] sonnet ${cost:.4f} -> {files}")
+    log(f"[plan] done: contract.md + sprints.jsonl - {n} sprints, ${cost:.4f}")
     return cost
 
 def execute():
@@ -98,6 +105,7 @@ def execute():
     contract = open("contract.md").read() if os.path.exists("contract.md") else ""
     sprints = [json.loads(l) for l in open("sprints.jsonl") if l.strip()]
     pending = {s["id"]: s for s in sprints}; done, manifest, total = set(), [], 0.0
+    log(f"[execute] building {len(sprints)} sprints on Haiku...")
     def call_for(s):
         # kind "brief" -> emit markdown (saved to briefs/<id>.md); else -> emit <FILE> blocks
         if s.get("kind") == "brief":
@@ -137,13 +145,15 @@ def execute():
                 del pending[s["id"]]
                 if files:
                     done.add(s["id"])
+                    log(f"[execute]   ok {s['id']} -> {', '.join(files)}  ${cost:.4f}  ({len(manifest)}/{len(sprints)})")
                 else:
                     # a failed sprint is NOT marked done — its dependents stay unsatisfied and
                     # the next wave aborts, rather than building against missing artifacts.
+                    log(f"[execute]   FAILED {s['id']}: no output - dependents will not run  ({len(manifest)}/{len(sprints)})")
                     sys.stderr.write(f"[dispatch] FAILED sprint {s['id']}: no output — dependents will not run.\n")
     json.dump({"sprints":manifest,"dispatch_cost_usd":round(total,4),
                "all_ok":all(m["ok"] for m in manifest) and not pending}, open("manifest.json","w"), indent=2)
-    print(f"[execute] {len(manifest)} sprints, ${total:.4f}" + ("" if not pending else f" (ABORTED: {len(pending)} unrun)"))
+    log(f"[execute] done: {len(manifest)} sprints, ${total:.4f}" + ("" if not pending else f" (ABORTED: {len(pending)} unrun)"))
     return total
 
 def run_gate(cmd):
@@ -161,24 +171,32 @@ def fix(gate_out):
     prompt = ("Some tests are failing. Diagnose and fix. Output corrected versions of ONLY the files "
         "that need changing, each wrapped <FILE path=\"...\">...</FILE>, no prose.\n\n"
         f"GATE OUTPUT (failures):\n{gate_out}\n\nCURRENT FILES:\n{blob}\n")
+    log("[fix] gate failed - Sonnet diagnosing + repairing...")
     text, cost = call_model(prompt, "sonnet",
         system='Output ONLY corrected files, each wrapped as <FILE path="...">...</FILE>, nothing else.')
     changed = write_files(text)
-    print(f"[fix] sonnet ${cost:.4f} -> changed {changed}")
+    log(f"[fix] done: changed {changed}  ${cost:.4f}")
     return cost
 
 def run_pipeline(gate_cmd):
     pc = plan(); dc = execute(); fc = 0.0; rounds = 0
+    log(f"[gate] running: {gate_cmd}")
     ok, out = run_gate(gate_cmd)
+    log(f"[gate] {'PASS' if ok else 'FAIL'}")
     while not ok and rounds < 2:
-        rounds += 1; fc += fix(out); ok, out = run_gate(gate_cmd)
+        rounds += 1; fc += fix(out)
+        log(f"[gate] re-running after fix {rounds}: {gate_cmd}")
+        ok, out = run_gate(gate_cmd)
+        log(f"[gate] {'PASS' if ok else 'FAIL'}")
     json.dump({"plan_cost_usd":round(pc,5),"dispatch_cost_usd":round(dc,5),"fix_cost_usd":round(fc,5),
                "fix_rounds":rounds,"gate_pass":ok,"total_cost_usd":round(pc+dc+fc,4)},
               open("run_manifest.json","w"), indent=2)
-    print(f"[run] gate {'PASS' if ok else 'FAIL'} after {rounds} fix round(s) | "
-          f"plan ${pc:.4f} + exec ${dc:.4f} + fix ${fc:.4f} = ${pc+dc+fc:.4f}")
+    log(f"[done] gate {'PASS' if ok else 'FAIL'} after {rounds} fix round(s) -> run_manifest.json")
+    log(f"[done] plan ${pc:.4f} + exec ${dc:.4f} + fix ${fc:.4f} = ${pc+dc+fc:.4f}")
 
 def main():
+    try: sys.stdout.reconfigure(line_buffering=True)  # stream progress; harmless if unsupported
+    except Exception: pass
     if "--run" in sys.argv:
         i = sys.argv.index("--run"); gate = sys.argv[i+1] if i+1 < len(sys.argv) else "node --test"
         run_pipeline(gate)
