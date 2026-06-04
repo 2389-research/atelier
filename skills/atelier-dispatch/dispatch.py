@@ -32,17 +32,20 @@ SYS_BRIEF = ('You are a planner. Output ONLY a terse build brief in markdown —
 def call_model(prompt, model, system=None):
     cmd = ["claude","-p",prompt,"--model",model,"--bare","--output-format","json"]
     if system: cmd += ["--system-prompt", system]
-    p = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
-    if p.returncode != 0:
-        # surface the failure rather than silently returning empty/partial output that
-        # would later read as a (falsely) successful sprint with no artifacts.
-        sys.stderr.write(f"[dispatch] model call FAILED rc={p.returncode} ({model}): {p.stderr[:300]}\n")
-        return "", 0.0
-    try:
-        d = json.loads(p.stdout); return d.get("result",""), float(d.get("total_cost_usd",0) or 0)
-    except Exception:
-        sys.stderr.write(f"[dispatch] parse fail ({model}): {p.stdout[:200]} {p.stderr[:200]}\n")
-        return "", 0.0   # not p.stdout — never treat unparseable output as file content
+    # `claude -p` intermittently exits rc!=0 (transient API/rate/network blip) or returns
+    # unparseable output. These almost always clear on a retry, so try once more before
+    # giving up — a single flaky call must not silently drop a plan or a sprint's artifact.
+    for attempt in (1, 2):
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+        if p.returncode != 0:
+            sys.stderr.write(f"[dispatch] model call FAILED rc={p.returncode} ({model}) attempt {attempt}/2: {p.stderr[:300]}\n")
+            continue
+        try:
+            d = json.loads(p.stdout); return d.get("result",""), float(d.get("total_cost_usd",0) or 0)
+        except Exception:
+            sys.stderr.write(f"[dispatch] parse fail ({model}) attempt {attempt}/2: {p.stdout[:200]} {p.stderr[:200]}\n")
+    # both attempts failed — surface empty rather than treating junk as file content
+    return "", 0.0
 
 FILE_RE = re.compile(r'<FILE path="([^"]+)">\r?\n?(.*?)\r?\n?</FILE>', re.DOTALL)
 def write_files(text, root="."):
@@ -72,7 +75,13 @@ def plan():
         '{"id":"SPRINT-001","tier":"haiku","kind":"generate","deps":[],"brief":"terse brief + acceptance criteria"}. '
         "STRICT: exactly ONE output file per sprint — never bundle two files into one sprint "
         "(the executor is a small model and does best on a single focused file). If a "
-        "feature needs a source file and a test file, that's TWO sprints.\n\n"
+        "feature needs a source file and a test file, that's TWO sprints.\n"
+        "EVERY generate sprint runs on Haiku (set tier to \"haiku\") — there is NO Sonnet "
+        "executor tier. Decomposition is YOUR job: size and specify each sprint so Haiku can "
+        "execute it from the contract + brief with zero judgment left. If a unit feels too "
+        "hard or too large for Haiku, SPLIT it into smaller sprints — never escalate to a "
+        "stronger executor (that's what burns the cost win). Sonnet is used only here, for "
+        "planning, and for the post-gate fix loop.\n\n"
         + (f"AGENDA:\n{agenda}\n\n" if agenda else "") + f"TASK SPEC:\n{spec}\n")
     text, cost = call_model(prompt, "sonnet", system=SYS_PLAN)
     files = write_files(text)
@@ -94,8 +103,13 @@ def execute():
         if s.get("kind") == "brief":
             return call_model(f"CONTRACT:\n{contract}\n\nWrite the brief for this sprint:\n{s.get('brief','')}\n",
                               s.get("tier","sonnet"), SYS_BRIEF)
+        # Code generation ALWAYS runs on Haiku, regardless of any tier the plan wrote.
+        # The planner's job is to decompose to Haiku-executable granularity, not to escalate
+        # the executor — escalating is what burns the cost win. Sonnet stays reserved for
+        # planning and the bounded post-gate fix loop. (A genuine miss is caught by the fix
+        # loop, not by a more expensive executor.)
         return call_model(f"CONTRACT:\n{contract}\n\nYOUR SPRINT BRIEF (write exactly one file):\n{s.get('brief','')}\n",
-                          s.get("tier","haiku"), SYS_EXEC)
+                          "haiku", SYS_EXEC)
     while pending:
         ready = [s for s in pending.values() if all(d in done for d in s.get("deps", []))]
         if not ready:   # unresolved deps or a cycle — do NOT silently run everything
@@ -114,7 +128,11 @@ def execute():
                         sys.stderr.write(f"[dispatch] REFUSED brief path outside workspace: {out}\n"); files = []
                 else:
                     files = write_files(text, root)
-                manifest.append({"id":s["id"],"tier":s.get("tier"),"kind":s.get("kind","generate"),
+                # record the model that ACTUALLY ran, not the plan's intent: generate sprints
+                # are forced to Haiku above, so a plan that wrote tier:"sonnet" must not show
+                # up as sonnet in the manifest (these manifests are our cost-attribution truth).
+                actual_tier = s.get("tier","sonnet") if s.get("kind") == "brief" else "haiku"
+                manifest.append({"id":s["id"],"tier":actual_tier,"kind":s.get("kind","generate"),
                                  "cost_usd":round(cost,5),"files":files,"ok":bool(files)})
                 del pending[s["id"]]
                 if files:

@@ -9,6 +9,23 @@ bumps it** so `/plugin` installs pick the change up cleanly.
 - **MINOR** — new capability or a backwards-compatible behavior/doc change.
 - **PATCH** — fixes and small corrections, no behavior change.
 
+## [0.3.0]
+
+- **Dispatch executor is now always Haiku.** Code generation never escalates to Sonnet:
+  the planner is instructed to decompose each sprint to Haiku-executable granularity (and
+  to *split* a too-hard unit rather than assign a stronger executor), and `execute()` runs
+  every generate sprint on Haiku regardless of any tier the plan wrote. Sonnet is reserved
+  for planning and the bounded post-gate fix loop. Rationale: on a real multi-module build,
+  the planner had been promoting the coupled sprints (engine, tests, UI) to Sonnet — one
+  Sonnet test sprint alone was 77% of execution cost. Forcing Haiku for all codegen cut a
+  representative build from $1.23 → $0.86 total at equal verified quality (gate green, 100%
+  engine branch coverage). The point of planning is Haiku-sized sprints; escalating the
+  executor is the planner punting.
+- **Retry transient model-call failures.** `claude -p` intermittently exits `rc!=0`
+  (transient API/rate/network blip) or returns unparseable output; `call_model` now
+  retries once before giving up, so a single flaky call can no longer silently drop a
+  plan or a sprint's artifact.
+
 ## [0.2.0]
 
 - Packaged as a Claude Code plugin: added `.claude-plugin/marketplace.json` so the repo
