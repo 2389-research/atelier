@@ -46,13 +46,22 @@ outputs go to disk, not into your context.
    - For a split-planning pass, first emit `kind:"brief"` sprints (tier sonnet) to write
      briefs, then `kind:"generate"` sprints (tier haiku) that consume them. For small
      jobs, just write the briefs inline here and skip the brief pass.
-4. **Dispatch** — run the script ONCE via Bash:
+4. **Dispatch** — run the script via Bash. Prefer `--run "<gate>"` (full pipeline:
+   plan → execute → gate → bounded fix), or bare for execute-only:
    ```bash
-   python3 <this-skill-dir>/dispatch.py
+   python3 <this-skill-dir>/dispatch.py --run "node --test"
    ```
    It loops the sprints, makes the bare calls (parallel within a dep wave), writes files
-   to disk, and emits `manifest.json` + a cost line. **Do not read the generated files
-   into your context** — read `manifest.json`.
+   to disk, and emits `manifest.json` + `run_manifest.json`. **Do not read the generated
+   files into your context** — read the manifests.
+
+   **Run it in the BACKGROUND and narrate progress to the user** — a multi-minute silent
+   Bash call is a bad UX. The script streams flushed milestones you should relay as they
+   appear, e.g. `[plan] done: … N sprints` → `[execute] ok SPRINT-003 → … (3/N)` →
+   `[gate] PASS` → `[done] … = $X`. The manifests are the durable checkpoints
+   (`plan_manifest.json` after planning, `manifest.json` after execute, `run_manifest.json`
+   at the end), so poll/tail and report: "✅ Planned N sprints → ⏳ executing 3/N →
+   ✅ gate passed, $X." Keep these summaries lean — relay the milestones, not the file contents.
 5. **Verify (gate)** — run the task's gate yourself with Bash (`node --test`, `pytest`,
    a CLI smoke). This is the independent check; cheap, no model.
 6. **Surgical-fix loop** — for each failure, read ONLY the failing test + the relevant

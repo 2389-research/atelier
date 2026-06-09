@@ -9,6 +9,16 @@ bumps it** so `/plugin` installs pick the change up cleanly.
 - **MINOR** — new capability or a backwards-compatible behavior/doc change.
 - **PATCH** — fixes and small corrections, no behavior change.
 
+## [0.4.0]
+
+- **Live progress UX for `atelier-dispatch`.** `dispatch.py` now streams flushed,
+  phase-by-phase milestones — `[plan] done: … N sprints`, per-sprint `[execute] ok
+  SPRINT-003 -> file ($cost) (k/N)`, `[gate] PASS/FAIL`, `[fix] …`, and a `[done]`
+  cost summary — instead of going silent until the end. `atelier-dispatch` SKILL.md
+  now tells the orchestrator to run the script in the background and relay those
+  milestones to the user (manifests are the durable checkpoints). Replaces the
+  silent multi-minute Bash call with a real play-by-play.
+
 ## [0.3.0]
 
 - **Dispatch executor is now always Haiku.** Code generation never escalates to Sonnet:
