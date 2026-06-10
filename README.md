@@ -2,7 +2,7 @@
 
 **Tiered-delegation task execution for Claude Code.** A planner model writes the spec
 into sprints, a cheap model executes and self-verifies against the gate — same gate
-quality as the strong model, **~64% cheaper** (≈⅓ the cost) ([benchmarked](eval/RESULTS.md)).
+quality as the strong model, **~64% cheaper** (≈⅓ the cost) ([benchmarked](https://github.com/2389-research/thrifty/blob/main/eval/RESULTS.md)).
 
 > Offload each sprint of work to the **weakest model that can do it correctly.**
 
@@ -16,8 +16,8 @@ self-reported. This generalizes "tests as the source of truth" to any task, code
 ### Benchmarked architecture
 
 The configuration that won the cost/quality bake-off (spec → working code, 7 tasks across
-JS / Python / Go / prose, gate-verified — see [`eval/RESULTS.md`](eval/RESULTS.md) and
-[`experiments/`](experiments/README.md)):
+JS / Python / Go / prose, gate-verified — see [`eval/RESULTS.md`](https://github.com/2389-research/thrifty/blob/main/eval/RESULTS.md) and
+[`experiments/`](https://github.com/2389-research/thrifty/blob/main/experiments/README.md)):
 
 ```text
 spec ──▶ Sonnet  writes contract (pins cross-sprint + genuinely-ambiguous decisions)
@@ -169,8 +169,8 @@ A regression guard rolls back any fix that breaks a previously-passing criterion
 ## Design & evidence
 
 The benchmarked architecture and the full cost/quality investigation (including the
-approaches we tried and rejected) are in [`eval/RESULTS.md`](eval/RESULTS.md); reproducible
-scripts + captured data are in [`experiments/`](experiments/README.md).
+approaches we tried and rejected) are in [`eval/RESULTS.md`](https://github.com/2389-research/thrifty/blob/main/eval/RESULTS.md); reproducible
+scripts + captured data are in [`experiments/`](https://github.com/2389-research/thrifty/blob/main/experiments/README.md).
 
 ## Two implementations — use dispatch by default
 
@@ -203,5 +203,5 @@ scripts + captured data are in [`experiments/`](experiments/README.md).
 
 v0.1 — **benchmarked.** The lean dispatch flow is ~64% cheaper than Opus building the same
 spec, at equal gate quality, across 7 tasks (JS / Python / Go / prose). Evidence:
-[`eval/RESULTS.md`](eval/RESULTS.md) (main findings + full journey) and
-[`experiments/`](experiments/README.md) (reproducible scripts + captured cost data).
+[`eval/RESULTS.md`](https://github.com/2389-research/thrifty/blob/main/eval/RESULTS.md) (main findings + full journey) and
+[`experiments/`](https://github.com/2389-research/thrifty/blob/main/experiments/README.md) (reproducible scripts + captured cost data).
