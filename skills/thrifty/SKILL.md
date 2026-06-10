@@ -184,15 +184,24 @@ Mark dispatched units `executing` in the ledger. As executors return, record the
 self-reported results. When a unit's dependencies become satisfied, dispatch it in
 the next batch.
 
-**Verify the executor tier actually landed (do not assume).** Setting `model: "haiku"`
-is a *request* — a runtime may ignore it and fall back to Sonnet or the orchestrator's
-own model, which silently erases the cost win (this has happened in real runs). For each
-executor, confirm the model it actually ran on — from its reported `model:` line and,
-where available, the run's usage/transcript — and record that **observed** model in the
-ledger, not the requested one. If an executor did **not** run on Haiku, flag it loudly in
-the report and treat the run's cost savings as unverified; do not let the ledger claim
-Haiku-tier savings for a unit that ran on Sonnet. (The dispatch flow avoids this by pinning
-Haiku in code — prefer it when cost is the priority.)
+**Verify the executor tier actually landed (do not assume — and do not trust self-report).**
+Setting `model: "haiku"` is a *request* — a runtime may ignore it and fall back to Sonnet or
+the orchestrator's own model, silently erasing the cost win (this has happened in real runs).
+Verifying which model ran is harder than it looks:
+- **A subagent's self-reported `model:` line is only a weak signal — it can be wrong.** A model
+  asked "what model are you?" answers from priors, not from ground truth about its own runtime
+  routing; under a *silent* substitution it will often still claim to be Haiku. So a self-report
+  of "haiku" does **not** confirm Haiku ran. Use it only as a cheap smoke check, never as proof.
+- **The authoritative signal is observed cost/usage.** Where the harness exposes per-call
+  cost/tokens, a Haiku call is ~10–20× cheaper than Sonnet for the same work — that price gap
+  *is* the proof (cf. the cost smoke test in `thrifty-dispatch`). A unit that cost Sonnet-money
+  did not run on Haiku, whatever it reported.
+
+Record the **observed** model only when you can corroborate it (cost/usage, or a self-report
+that the cost corroborates). When you genuinely can't observe it, mark the tier **`unverified`**
+in the ledger rather than writing a model you can't confirm — and compute savings conservatively.
+Flag loudly any executor that demonstrably ran off Haiku. (The dispatch flow sidesteps all of
+this by pinning Haiku *in code* — prefer it when cost is the priority.)
 
 ### Step 4 — Verify (tiered by criterion type — don't pay Sonnet to read passing code)
 Verification matches the criterion. **A Sonnet read is expensive (~3× Haiku);

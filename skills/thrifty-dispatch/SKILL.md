@@ -68,7 +68,11 @@ outputs go to disk, not into your context.
    at the end), so poll/tail and report: "✅ Planned N sprints → ⏳ executing 3/N →
    ✅ gate passed, $X." Keep these summaries lean — relay the milestones, not the file contents.
 5. **Verify (gate)** — run the task's gate yourself with Bash (`node --test`, `pytest`,
-   a CLI smoke). This is the independent check; cheap, no model.
+   a CLI smoke). This is the independent check; cheap, no model. **Gate on the command the
+   project actually ships with** (`npm run build`, `tsc -b && vite build`, `go build ./...`),
+   not a weaker proxy that can pass while the real build fails (e.g. a bare `tsc --noEmit` is
+   often a no-op under a `tsc -b` project-reference setup). If unsure, read `package.json`
+   scripts / build config and gate on that.
 6. **Surgical-fix loop** — for each failure, read ONLY the failing test + the relevant
    code, diagnose (code bug vs the executor's own bad test), and fix in place — or
    re-dispatch that one sprint with a corrective note appended to its brief. Re-run the

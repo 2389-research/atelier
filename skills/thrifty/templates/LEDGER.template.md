@@ -10,8 +10,10 @@ Working dir: `docs/thrifty/<task-slug>/`
 | UNIT-002 | <title> | UNIT-001 | pending | — | 0 | 0 | 0 | |
 
 > `exec_model (observed)` = the model the executor **actually ran on**, not the requested
-> tier. Fill from the executor's reported `model:` line / run usage. Flag anything that
-> isn't Haiku — it means the tier request was dropped and the cost win didn't apply.
+> tier. The self-reported `model:` line is a weak signal only — corroborate with observed
+> cost/usage (a Haiku call is ~10–20× cheaper than Sonnet). Write a model here only when
+> corroborated; otherwise put **`unverified`**. Flag anything that demonstrably isn't Haiku —
+> the tier request was dropped and the cost win didn't apply.
 
 Status ∈ `pending` · `executing` · `checking` · `done` · `escalated`
 

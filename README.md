@@ -31,7 +31,10 @@ spec ──▶ Sonnet  writes contract (pins cross-sprint + genuinely-ambiguous 
                  the Haiku agent self-fixed to green on all 7 tasks)
 ```
 
-**Result: ~64% cheaper than Opus building the same spec, at equal gate quality.** Two
+**Result: ~64% cheaper than Opus building the same spec, at equal gate quality** — on
+*large, multi-unit* builds (the win grows with size). On trivial builds the planning
+overhead makes thrifty cost *more* than a single capable agent, so there's a crossover
+below which you should just use one strong model directly (see [Usage](#usage)). Two
 things make it work: a single cached agent reuses the contract across turns (cheap, no
 cold-call bloat), and the contract **pins every decision that crosses a sprint boundary**
 so the executor never invents a system-level choice (leave one ambiguous and the executor
@@ -82,7 +85,8 @@ would otherwise diverge on, and let Haiku infer the rest.
 
 | Skill | Role | Model | Runs as |
 |-------|------|-------|---------|
-| `thrifty` | orchestrator | — | this session |
+| `thrifty` | orchestrator (subagent flow) | — | this session |
+| `thrifty-dispatch` | orchestrator (lean dispatch flow — **default**) | — | this session |
 | `thrifty-plan` | director's planning discipline | Sonnet | this session |
 | `thrifty-brief` | expand a unit spec into a brief *(split tier)* | Sonnet | dispatched subagent |
 | `thrifty-execute` | execute one unit | Haiku | dispatched subagent |
@@ -196,8 +200,10 @@ scripts + captured data are in [`experiments/`](https://github.com/2389-research
   **Executor-tier caveat:** unlike dispatch, this path **cannot force the executor model in
   code** — it asks the orchestrator to dispatch with `model: "haiku"`, which a runtime may
   silently ignore (falling back to Sonnet/the default). Verify the *actual* model each
-  executor ran on before trusting any cost figure; the ledger's savings line is an estimate,
-  not a measurement. (See `thrifty-plan` / `thrifty`'s "verify the executor model" step.)
+  executor ran on before trusting any cost figure — and note a subagent's *self-reported*
+  model is only a weak signal (a silently-substituted model often still claims to be Haiku);
+  the authoritative check is observed cost/usage. The ledger's savings line is an estimate,
+  not a measurement. (See the "Verify the executor tier" step in `thrifty`'s Step 3.)
 
 ## Status
 
