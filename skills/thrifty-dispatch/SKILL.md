@@ -28,7 +28,12 @@ outputs go to disk, not into your context.
    context compounding, no re-read tax.
 
 ## Your flow (you are the architect; keep YOUR turns + context lean)
-1. **Frame** — read the spec / explore context. Choose a `<slug>`; work in a clean dir.
+1. **Frame** — **confirm a spec exists first.** thrifty executes a spec (requirements +
+   what "done" means); it does the planning, but does NOT invent the requirements. If the
+   user gave no spec or pointer, don't fabricate one and build — tell them thrifty executes
+   a spec they bring (authored however they like — thrifty is plan-agnostic), offer to help
+   draft/brainstorm it, and re-enter once it exists. Otherwise: read the spec / explore
+   context. Choose a `<slug>`; work in a clean dir.
 2. **Write `contract.md`** — the cross-sprint surface ONLY (shared interfaces/seam,
    conventions, ownership, dep graph). Lean — pin what crosses a boundary, trust the
    executor for interiors (Haiku is strong; this is not byte-pinning for a local model).

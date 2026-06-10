@@ -96,8 +96,22 @@ Templates live in this skill's `templates/` directory:
 
 ## Workflow
 
-### Step 1 — Frame
-Clarify the goal if it is ambiguous, and explore the relevant context (existing
+### Step 1 — Frame (first: confirm there's a spec to execute)
+**thrifty executes a spec — it does not invent one.** Before anything else, confirm a
+spec actually exists: a clear statement of *what to build* and *what "done" means*
+(acceptance criteria / a gate). thrifty does the **planning** for you (decomposition into a
+contract + units in Step 2) — but it needs *requirements* as input. "Spec" here means the
+requirements, not a finished plan.
+
+**If the user hasn't given a spec or a pointer to one, do NOT fabricate requirements and
+start building.** Stop and tell them plainly: thrifty is for *executing* a spec cheaply, so
+they need to bring one first. They're free to author it however they like — by hand, with
+Opus/Gemini, or via the `brainstorming` skill — **thrifty is plan-agnostic**; it only needs
+a spec to exist. Offer to help draft or brainstorm one, then re-enter thrifty once it does.
+Only proceed past framing when the requirements + done-criteria are clear enough to pin
+cross-unit decisions against.
+
+Then: clarify any remaining ambiguity, and explore the relevant context (existing
 code, source material, conventions). You cannot pin cross-unit decisions you
 haven't looked at. Choose a `<task-slug>` and create the working directory.
 
