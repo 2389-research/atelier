@@ -5,9 +5,9 @@ description: >
   execute a spec cheaply. thrifty takes a spec you already have (written by hand or by
   any model — thrifty doesn't care which) and EXECUTES it for less. Orchestrates a
   tiered-delegation run: the architect (Sonnet) refines the spec into a contract that
-  pins every cross-cutting decision, executors (Haiku subagents) do the bulk work in
-  parallel from per-unit briefs, and a checker (Sonnet subagent) verifies each unit
-  against explicit acceptance criteria and applies bounded tiered fixes. Works for code
+  pins every cross-cutting decision, ONE cached Haiku executor subagent builds the whole
+  ordered unit list in a single session (gate in-loop, self-fixing — not one subagent per
+  unit), and Sonnet verifies/fixes only where a test can't judge. Works for code
   and non-code tasks alike. PREFER the lean dispatch flow (thrifty-dispatch) by default —
   it is the benchmarked, cheapest path; THIS subagent substrate is the richer, pricier
   fallback.
@@ -42,10 +42,12 @@ whatever — is your call; thrifty starts once you have one.)
 architect (Sonnet)       plan: contract + briefs + acceptance criteria
         │
         ▼
-executors (Haiku × N)    execute one brief each, in parallel where deps allow
+executor (Haiku, 1)      one cached agent builds the whole unit list in order,
+                         gate in-loop, self-fixing (no per-unit parallelism)
         │
         ▼
-checker (Sonnet)         verify each unit vs criteria; bounded tiered fixes
+gate + checker (Sonnet)  orchestrator re-runs the gate; Sonnet fixes on failure /
+                         judges assertional criteria a test can't
         │
         ▼
 architect (Sonnet)       integrate, coherence pass, report
@@ -74,7 +76,7 @@ anyway), or for trivial tasks where the planning overhead exceeds the work.
 |------|-------|-----|------|
 | **architect / director** | Sonnet 4.6 | this session | plan, decide cross-unit, integrate, replan |
 | **brief-writer** *(split tier only)* | Sonnet 4.6 | dispatched subagent | expand one terse unit spec into a full brief |
-| **executor** | Haiku 4.5 | dispatched subagent | execute one brief |
+| **executor** | Haiku 4.5 | dispatched subagent | **one cached agent** builds the whole ordered unit list (gate in-loop, self-fix) — not one-per-unit |
 | **checker** | Sonnet 4.6 | dispatched subagent | judge + fix a unit — *only when a gate fails or there are assertional criteria* |
 
 **Dispatch mechanism:** the `Agent` tool's `model` parameter. Dispatch executors
@@ -147,42 +149,52 @@ problem in the contract/spec), that's yours to resolve — fix the contract/spec
 re-dispatch that writer. Once briefs exist, confirm criteria with the user (unless
 pre-specified), then proceed to Step 3.
 
-**Decomposition mode** — how the artifact is split governs dispatch in Step 3:
-- **partition** — units own separate regions/files; run in **parallel**; you merge
-  fragments at integration. (Default for separable outputs.)
-- **relay** — one shared artifact extended segment by segment; units run
-  **sequentially**, each receiving the artifact's current state.
-- **layered** — role-specialized passes over the whole artifact (draft → edit →
-  polish); units run **sequentially**.
+**Decomposition mode** — how the artifact is split (the one executor builds the units in
+dependency order regardless; the mode shapes the briefs + the integration step):
+- **partition** — units own separate regions/files; the executor writes each in turn, you
+  assemble the fragments at integration. (Default for separable outputs.)
+- **relay** — one shared artifact extended segment by segment, in order, each unit picking
+  up the artifact's current state.
+- **layered** — role-specialized passes over the whole artifact (draft → edit → polish),
+  in order.
 - *Single artifact, no cross-unit seams* → degenerate plan: no `CONTRACT.md`, one
   brief, one execute, one check.
 
-### Step 3 — Dispatch executors
-**Partition mode:** walk the dependency graph; for every unit whose dependencies are
-all `done`, dispatch a Haiku executor, and **dispatch all currently-ready units in a
-single message** (multiple `Agent` calls) so independent units run in parallel.
-
-**Relay / layered mode:** dispatch **one unit at a time, in order** — do not
-parallelize. Each executor reads the shared artifact's current state and
-extends it (relay) or applies its pass (layered). Check each unit before
-dispatching the next, so continuity errors are caught before they compound.
+### Step 3 — Execute (default: ONE cached Haiku executor over the whole list)
+**The default — and the cost-correct choice — is a single cached Haiku executor that builds
+the entire unit list in one session.** Do **not** spawn one subagent per unit. Hand the one
+executor the dependency-ordered list; it reads `CONTRACT.md` once and builds each unit in
+turn, **reusing (caching) the contract + its own accumulating output across units**, then
+runs the gate in-loop and self-fixes. This recreates the cheapest measured architecture (the
+"single cached Haiku agent" in `eval/RESULTS.md`) *inside* Claude Code: one spawn's harness
+amortized across all units, and **one report back** to the orchestrator instead of N.
+Parallelism is deliberately given up — it is not worth the per-spawn harness + the
+orchestrator re-reading N reports that one-subagent-per-unit costs.
 
 ```text
 Agent(
   subagent_type: general-purpose,
   model: "haiku",
-  description: "thrifty execute UNIT-NNN",
+  description: "thrifty execute <slug>",
   prompt: "Use the thrifty-execute skill. Working dir: docs/thrifty/<slug>/.
-           Your unit: UNIT-NNN. Read CONTRACT.md and briefs/UNIT-NNN.md, execute
-           the brief, and report results against its acceptance criteria.
-           FIRST LINE of your report MUST be: 'model: <the model id you are running
-           on>' so the orchestrator can verify the tier."
+           Read CONTRACT.md, then build these units IN DEPENDENCY ORDER:
+           UNIT-001, UNIT-002, … (read each brief in briefs/<UNIT>.md). Honor the
+           contract; reuse what you've already built. After building, run the gate
+           <gate cmd> and fix until it passes. Report per-unit results against each
+           unit's acceptance criteria.
+           FIRST LINE of your report MUST be: 'model: <the model id you are running on>'."
 )
 ```
 
-Mark dispatched units `executing` in the ledger. As executors return, record their
-self-reported results. When a unit's dependencies become satisfied, dispatch it in
-the next batch.
+**Splitting the list across more than one executor — for *context*, not speed.** If the
+build is too large to fit one agent's context (compaction risk), split into a few
+**sequential** batches along the dependency order: each batch is its own cached agent, run
+one after the next, each handed the prior batches' outputs. Relay/layered decomposition (a
+shared artifact extended segment by segment) is inherently sequential and maps onto this
+directly. **Never split for parallelism** — sequential cached agents are the whole point.
+
+Mark units `executing` → `done` in the ledger as the executor reports them. The orchestrator
+independently re-runs the gate in Step 4 (the executor's self-fix is not taken on trust).
 
 **Verify the executor tier actually landed (do not assume — and do not trust self-report).**
 Setting `model: "haiku"` is a *request* — a runtime may ignore it and fall back to Sonnet or
@@ -296,8 +308,10 @@ termination.
 
 ## Common mistakes
 
-- **Dispatching ready units one at a time.** Batch all currently-ready units into a
-  single message so they run in parallel — that is the whole point.
+- **Spawning one subagent per unit.** That's the cost trap — each spawn re-pays ~40–50k
+  of harness and dumps another report into the orchestrator's context (re-read every
+  turn). The default is **one cached executor for the whole list**; split into *sequential*
+  cached agents only when the build won't fit one context. Never fan out per unit for speed.
 - **Over-specifying briefs.** Haiku is capable. Pin the *seams* (cross-unit), trust
   Haiku for the *interiors*. Byte-level pinning is for tiny local models, not this.
 - **Letting the checker escalate itself.** Escalation decisions and counters live
