@@ -412,10 +412,10 @@ same specs in one sitting, and (b) check the recorded numbers ~2 weeks on. All m
 
 | task | size | Opus full CC | dispatch (Sonnet plan + bare Haiku) | subagent (aggregate orch+subagents) | cheapest |
 |------|------|--------------|--------------------------------------|--------------------------------------|----------|
-| fibkit       | small (393 LOC, 14 units) | **$0.374** | $0.448 | $0.753¹ → $0.544 | **Opus** |
+| fibkit       | small (393 LOC, 14 units) | **$0.374** | $0.448 | $0.544¹ | **Opus** |
 | 03-jqlite    | large (~560 LOC, 5 modules, 12 units) | $0.880 | **$0.497** | $0.753 | **dispatch** |
 
-¹ fibkit subagent was $0.544; jqlite subagent $0.753 (7 units). Both gate-PASS; the jqlite
+¹ subagent runs were per-unit dispatch (fibkit $0.544; jqlite $0.753, 7 units). Both gate-PASS; the jqlite
 subagent LEDGER recorded all 7 executors on `claude-haiku-4-5` (the model override landed
 this run — it's environment-dependent, which is why the flow now *verifies* rather than assumes).
 
