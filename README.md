@@ -108,7 +108,16 @@ architect.
 ## Usage
 
 Say **"thrifty"**, **"delegate this"**, or **"tiered build"** on a multi-part task.
-The orchestrator will: frame the goal, plan (write `CONTRACT.md` + per-sprint briefs
+
+**Which flow runs:** the agent should **try the lean dispatch flow (`thrifty-dispatch`)
+first** — it's the benchmarked, cheapest path — and fall back to the subagent flow below
+only when the dispatch runtime is unavailable (`python3` / `claude -p` can't be spawned) or
+the task genuinely needs per-unit *parallel* verification. Cost ordering, measured: **dispatch
+< subagent < direct-strong-model on large builds; on trivial builds the planning overhead
+makes either thrifty flow cost *more* than just one capable agent — so below ~a few real
+units, skip thrifty.** The `thrifty` skill now points the agent at dispatch by default.
+
+For the subagent flow, the orchestrator will: frame the goal, plan (write `CONTRACT.md` + per-sprint briefs
 with acceptance criteria, confirmed with you), dispatch Haiku executors in parallel
 where dependencies allow, **verify each unit by criterion type** (run the gate for
 runnable criteria; spend a Sonnet read only when a gate fails or there are

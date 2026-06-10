@@ -8,10 +8,28 @@ description: >
   pins every cross-cutting decision, executors (Haiku subagents) do the bulk work in
   parallel from per-unit briefs, and a checker (Sonnet subagent) verifies each unit
   against explicit acceptance criteria and applies bounded tiered fixes. Works for code
-  and non-code tasks alike.
+  and non-code tasks alike. PREFER the lean dispatch flow (thrifty-dispatch) by default —
+  it is the benchmarked, cheapest path; THIS subagent substrate is the richer, pricier
+  fallback.
 ---
 
 # thrifty — tiered delegation
+
+> **Pick the flow first — default to dispatch.** thrifty has two execution substrates,
+> and the cheap one is the default. **Before using the subagent flow described in this
+> file, try the lean `thrifty-dispatch` flow** — it runs the same Sonnet-plans /
+> Haiku-executes pipeline through bare `claude -p` calls (no per-subagent harness, no
+> orchestrator report re-read), and is **measurably cheaper** (benchmarked: dispatch beats
+> this subagent flow on every task, and the gap widens with size). Fall back to this
+> subagent substrate **only when**:
+> - the dispatch runtime is unavailable (`python3` not on PATH, or `claude -p` subprocesses
+>   can't be spawned in this environment), **or**
+> - you need per-unit **parallel** Sonnet verification, or executors need rich in-session
+>   tool use *during* execution (reading the repo, running things) that bare text calls
+>   can't do.
+>
+> If you're here purely to minimize cost on a multi-sprint build, **stop and invoke
+> `thrifty-dispatch` instead.**
 
 You bring a **spec**; thrifty executes it for less by delegating each unit of work to
 the **weakest model that can do it correctly**. The architect (Sonnet) does the
