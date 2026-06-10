@@ -8,10 +8,28 @@ description: >
   pins every cross-cutting decision, executors (Haiku subagents) do the bulk work in
   parallel from per-unit briefs, and a checker (Sonnet subagent) verifies each unit
   against explicit acceptance criteria and applies bounded tiered fixes. Works for code
-  and non-code tasks alike.
+  and non-code tasks alike. PREFER the lean dispatch flow (thrifty-dispatch) by default —
+  it is the benchmarked, cheapest path; THIS subagent substrate is the richer, pricier
+  fallback.
 ---
 
 # thrifty — tiered delegation
+
+> **Pick the flow first — default to dispatch.** thrifty has two execution substrates,
+> and the cheap one is the default. **Before using the subagent flow described in this
+> file, try the lean `thrifty-dispatch` flow** — it runs the same Sonnet-plans /
+> Haiku-executes pipeline through bare `claude -p` calls (no per-subagent harness, no
+> orchestrator report re-read), and is **measurably cheaper** (benchmarked: dispatch beats
+> this subagent flow on every task, and the gap widens with size). Fall back to this
+> subagent substrate **only when**:
+> - the dispatch runtime is unavailable (`python3` not on PATH, or `claude -p` subprocesses
+>   can't be spawned in this environment), **or**
+> - you need per-unit **parallel** Sonnet verification, or executors need rich in-session
+>   tool use *during* execution (reading the repo, running things) that bare text calls
+>   can't do.
+>
+> If you're here purely to minimize cost on a multi-sprint build, **stop and invoke
+> `thrifty-dispatch` instead.**
 
 You bring a **spec**; thrifty executes it for less by delegating each unit of work to
 the **weakest model that can do it correctly**. The architect (Sonnet) does the
@@ -78,8 +96,22 @@ Templates live in this skill's `templates/` directory:
 
 ## Workflow
 
-### Step 1 — Frame
-Clarify the goal if it is ambiguous, and explore the relevant context (existing
+### Step 1 — Frame (first: confirm there's a spec to execute)
+**thrifty executes a spec — it does not invent one.** Before anything else, confirm a
+spec actually exists: a clear statement of *what to build* and *what "done" means*
+(acceptance criteria / a gate). thrifty does the **planning** for you (decomposition into a
+contract + units in Step 2) — but it needs *requirements* as input. "Spec" here means the
+requirements, not a finished plan.
+
+**If the user hasn't given a spec or a pointer to one, do NOT fabricate requirements and
+start building.** Stop and tell them plainly: thrifty is for *executing* a spec cheaply, so
+they need to bring one first. They're free to author it however they like — by hand, with
+Opus/Gemini, or via the `brainstorming` skill — **thrifty is plan-agnostic**; it only needs
+a spec to exist. Offer to help draft or brainstorm one, then re-enter thrifty once it does.
+Only proceed past framing when the requirements + done-criteria are clear enough to pin
+cross-unit decisions against.
+
+Then: clarify any remaining ambiguity, and explore the relevant context (existing
 code, source material, conventions). You cannot pin cross-unit decisions you
 haven't looked at. Choose a `<task-slug>` and create the working directory.
 
@@ -142,13 +174,34 @@ Agent(
   description: "thrifty execute UNIT-NNN",
   prompt: "Use the thrifty-execute skill. Working dir: docs/thrifty/<slug>/.
            Your unit: UNIT-NNN. Read CONTRACT.md and briefs/UNIT-NNN.md, execute
-           the brief, and report results against its acceptance criteria."
+           the brief, and report results against its acceptance criteria.
+           FIRST LINE of your report MUST be: 'model: <the model id you are running
+           on>' so the orchestrator can verify the tier."
 )
 ```
 
 Mark dispatched units `executing` in the ledger. As executors return, record their
 self-reported results. When a unit's dependencies become satisfied, dispatch it in
 the next batch.
+
+**Verify the executor tier actually landed (do not assume — and do not trust self-report).**
+Setting `model: "haiku"` is a *request* — a runtime may ignore it and fall back to Sonnet or
+the orchestrator's own model, silently erasing the cost win (this has happened in real runs).
+Verifying which model ran is harder than it looks:
+- **A subagent's self-reported `model:` line is only a weak signal — it can be wrong.** A model
+  asked "what model are you?" answers from priors, not from ground truth about its own runtime
+  routing; under a *silent* substitution it will often still claim to be Haiku. So a self-report
+  of "haiku" does **not** confirm Haiku ran. Use it only as a cheap smoke check, never as proof.
+- **The authoritative signal is observed cost/usage.** Where the harness exposes per-call
+  cost/tokens, a Haiku call is ~10–20× cheaper than Sonnet for the same work — that price gap
+  *is* the proof (cf. the cost smoke test in `thrifty-dispatch`). A unit that cost Sonnet-money
+  did not run on Haiku, whatever it reported.
+
+Record the **observed** model only when you can corroborate it (cost/usage, or a self-report
+that the cost corroborates). When you genuinely can't observe it, mark the tier **`unverified`**
+in the ledger rather than writing a model you can't confirm — and compute savings conservatively.
+Flag loudly any executor that demonstrably ran off Haiku. (The dispatch flow sidesteps all of
+this by pinning Haiku *in code* — prefer it when cost is the priority.)
 
 ### Step 4 — Verify (tiered by criterion type — don't pay Sonnet to read passing code)
 Verification matches the criterion. **A Sonnet read is expensive (~3× Haiku);
@@ -159,6 +212,13 @@ spend it only where judgment is actually needed.**
    verification — you re-run rather than trust the executor's self-report, and it
    costs no model tokens. (For heavy/parallel gates you may delegate to a Haiku
    runner, but the orchestrator running a one-line command is cheapest.)
+
+   **The gate must be the command the project actually ships with** — `npm run build`,
+   `tsc -b && vite build`, `pytest`, `go build ./...`, etc. Do **not** accept a weaker
+   proxy that can pass while the real build fails: e.g. a bare `tsc --noEmit` is often a
+   no-op under a project-reference (`tsc -b`) setup and will report green while
+   `npm run build` errors. If unsure what the project ships, read its `package.json`
+   scripts / build config and gate on *that*.
 
 2. **Decide whether Sonnet is even needed for this unit:**
    - **All runnable criteria pass AND no assertional criteria** → mark the unit
@@ -193,8 +253,11 @@ fit together as one whole? Resolve any seams the unit-level checks couldn't see.
   the contract's ownership order).
 - **relay / layered** — assembly is a no-op; the shared artifact *is* the output.
   Your coherence pass just confirms the whole reads as one.
-Then report: what was built, the ledger summary, and an approximate note on
-tokens saved vs. building the whole spec without delegation.
+Then report: what was built, the ledger summary, and a note on tokens/cost saved vs.
+building the whole spec without delegation. **Compute that savings from the *observed*
+executor models (what each unit actually ran on), never from the intended tier** — if any
+executor fell back off Haiku (Step 3), the savings are lower than planned and the report
+must say so. An estimate is fine; an estimate that assumes a tier that didn't run is not.
 
 ## Fix-loop control (you own loop termination)
 
@@ -241,6 +304,11 @@ termination.
   with you, the orchestrator, or the loop won't terminate predictably.
 - **Vibes-based acceptance.** Every unit is judged against its written criteria,
   not a general sense of quality. If criteria are missing, the plan is incomplete.
+- **Assuming the executor ran on Haiku.** `model: "haiku"` is a request, not a
+  guarantee — verify the *observed* model per executor (Step 3) and base the cost
+  report on it. A ledger that claims Haiku savings while Sonnet actually ran is wrong.
+- **Gating on a no-op.** A green proxy command (e.g. `tsc --noEmit` under a `tsc -b`
+  project) can pass while the real `npm run build` fails. Gate on the ship command.
 - **Doing the executor's work yourself.** If you find yourself writing the unit's
   output, either the brief was wrong (fix the brief) or the task didn't need
   thrifty. Don't quietly absorb execution back into the architect session.

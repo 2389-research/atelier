@@ -28,7 +28,12 @@ outputs go to disk, not into your context.
    context compounding, no re-read tax.
 
 ## Your flow (you are the architect; keep YOUR turns + context lean)
-1. **Frame** — read the spec / explore context. Choose a `<slug>`; work in a clean dir.
+1. **Frame** — **confirm a spec exists first.** thrifty executes a spec (requirements +
+   what "done" means); it does the planning, but does NOT invent the requirements. If the
+   user gave no spec or pointer, don't fabricate one and build — tell them thrifty executes
+   a spec they bring (authored however they like — thrifty is plan-agnostic), offer to help
+   draft/brainstorm it, and re-enter once it exists. Otherwise: read the spec / explore
+   context. Choose a `<slug>`; work in a clean dir.
 2. **Write `contract.md`** — the cross-sprint surface ONLY (shared interfaces/seam,
    conventions, ownership, dep graph). Lean — pin what crosses a boundary, trust the
    executor for interiors (Haiku is strong; this is not byte-pinning for a local model).
@@ -63,7 +68,11 @@ outputs go to disk, not into your context.
    at the end), so poll/tail and report: "✅ Planned N sprints → ⏳ executing 3/N →
    ✅ gate passed, $X." Keep these summaries lean — relay the milestones, not the file contents.
 5. **Verify (gate)** — run the task's gate yourself with Bash (`node --test`, `pytest`,
-   a CLI smoke). This is the independent check; cheap, no model.
+   a CLI smoke). This is the independent check; cheap, no model. **Gate on the command the
+   project actually ships with** (`npm run build`, `tsc -b && vite build`, `go build ./...`),
+   not a weaker proxy that can pass while the real build fails (e.g. a bare `tsc --noEmit` is
+   often a no-op under a `tsc -b` project-reference setup). If unsure, read `package.json`
+   scripts / build config and gate on that.
 6. **Surgical-fix loop** — for each failure, read ONLY the failing test + the relevant
    code, diagnose (code bug vs the executor's own bad test), and fix in place — or
    re-dispatch that one sprint with a corrective note appended to its brief. Re-run the
